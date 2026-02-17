@@ -134,13 +134,15 @@ class AuthController extends Controller
 
         if ($user) {
             $user->code = $code;
+            // $user->code_expire_at = now()->addMinutes(10);
+
             $user->save();
 
             $details = [
                 'title' => 'Réinitialisation de mot de passe',
                 'body' => 'Code de vérification : ' . $code,
                 'code' => $code,
-                'id' => 'updatepassword/' . $user->id,
+                'id' => $user->id,
             ];
 
             Mail::to($email)->send(new Restarpasword($details));

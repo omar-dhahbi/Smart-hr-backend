@@ -13,7 +13,7 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::put('restarpasword/{email}', [AuthController::class, 'restarpassword']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('logout', [AuthController::class, 'logout'])->middleware(['auth:api', 'role:admin,employee']);
+    Route::post('logout', [AuthController::class, 'logout']);
     Route::put('updatepassword/{id}', [AuthController::class, 'updatepassword']);
     Route::get('User/{id}', [AuthController::class, 'getUserById']);
     Route::put('verifMail/{id}', [AuthController::class, 'verifMail']);

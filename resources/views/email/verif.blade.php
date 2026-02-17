@@ -13,7 +13,7 @@
                 <table width="600" cellpadding="0" cellspacing="0"
                     style="background-color: #ffffff; border-radius: 5px; overflow: hidden;">
                     <tr>
-                        <td align="center" style="background-color: #6A1B9A; color: #ffffff; padding: 30px 20px;">
+                        <td align="center" style="background-color:  #3F51B5;; color: #ffffff; padding: 30px 20px;">
                             <h1 style="margin: 0;">Verification de votre compte</h1>
                         </td>
                     </tr>
@@ -24,7 +24,7 @@
                             <p><strong>Password:</strong> {{ $details['password'] }}</p>
                             <div style="margin-top: 30px; text-align: center;">
                                 <a href="http://localhost:4200/Verif/{{ $details['id'] }}"
-                                    style="display: inline-block; padding: 12px 24px; background-color: #6A1B9A; color: white; text-decoration: none; border-radius: 5px;">
+                                    style="display: inline-block; padding: 12px 24px; background-color:  #3F51B5;; color: white; text-decoration: none; border-radius: 5px;">
                                     Activer votre compte
                                 </a>
                             </div>
