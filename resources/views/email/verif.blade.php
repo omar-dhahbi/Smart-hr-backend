@@ -32,7 +32,7 @@
                     </tr>
                     <tr>
                         <td align="center" style="padding: 20px; font-size: 12px; color: #aaa;">
-                            &copy; 2025.
+                            &copy; 2026.
                         </td>
                     </tr>
                 </table>

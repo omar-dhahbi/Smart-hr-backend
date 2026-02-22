@@ -27,7 +27,7 @@ class AuthController extends Controller
             'nom' => 'required|alpha',
             'prenom' => 'required|alpha',
             'email' => 'required|email|unique:users',
-            // 'password' => 'required|confirmed|min:6',
+            'date_naissance' => 'required|date',
         ]);
         if ($validator->fails()) {
              return response()->json([
@@ -41,12 +41,16 @@ class AuthController extends Controller
         $user->email = $request->email;
         $user->password = Hash::make($randomPassword);
         $user->verif_email = false;
+        $user->status = true;
+
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('/images'), $filename);
             $user->photo = "/images/" . $filename;
         }
+                $user->date_naissance = $request->date_naissance ;
+
         if ($request->hasFile('Contrat')) {
             $file = $request->file('Contrat');
             $filename = time() . '_' . $file->getClientOriginalName();
@@ -55,7 +59,10 @@ class AuthController extends Controller
         }
         $user->prix_heure = $request->prix_heure;
         $user->role = $request->role ;
-        // $user->grade = $request->grade;
+        $user->departement_id = $request->departement_id;
+
+
+        $user->grade = $request->grade;
         $user->save();
         $details = [
             'title' => 'Vérification de votre compte',
@@ -93,7 +100,9 @@ class AuthController extends Controller
         if ($user->verif_email == 0) {
             return response()->json(['error' => "Vous n'avez pas accès à la connexion"], 401);
         }
-
+        if ($user->status == 0) {
+            return response()->json(['error' => "Vous n'avez pas accès à la connexion"], 401);
+        }
         return response()->json([
             'status' => 'success',
             'user' => $user,
@@ -237,36 +246,53 @@ class AuthController extends Controller
         $user->save();
         return response()->json(['user' => $user], 200);
     }
-     public function ouvrirsession(){
-        $user = auth()->user();
-        if ($user->role !== 'employee') {
-            return response()->json(['error' => 'Action réservée aux employés'], 403);
-        }
+   public function ouvrirSession() {
+    $user = auth()->user();
 
-        // $user->connecte = true;
-        $user->session_ouverte = now();
-        $user->save();
-
-        return response()->json(['message' => 'Session ouverte avec succès', 'user' => $user]);
-
+    if ($user->role !== 'employee') {
+        return response()->json(['error' => 'Action réservée aux employés'], 403);
     }
-    public function fermerSession(){
-         $user = auth()->user();
-        if ($user->role !== 'employee') {
-            return response()->json(['error' => 'Action réservée aux employés'], 403);
-        }
-        $user->session_fermee = now();
-        if ($user->session_ouverte) {
-            $heures = \Carbon\Carbon::parse($user->session_ouverte)
-                ->diffInMinutes($user->session_fermee) / 60;
-            $user->nb_heure_par_jour = round($heures, 2);
-            $user->salaire += $user->prix_heure * $user->nb_heure_par_jour;
-        }
-
-        $user->save();
-
-        return response()->json(['message' => 'Session fermée avec succès', 'user' => $user]);
+    $user->session_ouverte = now();
+    if ($user->nb_heure_par_jour && $user->prix_heure) {
+        $user->salaire += $user->nb_heure_par_jour * $user->prix_heure;
     }
+    $user->save();
+
+    return response()->json(['message' => 'Session ouverte avec succès', 'user' => $user]);
+}
+
+public function fermerSession() {
+    $user = auth()->user();
+
+     if ($user->role !== 'employee') {
+        return response()->json(['error' => 'Action réservée aux employés'], 403);
+    }
+
+    if (!$user->session_ouverte) {
+        return response()->json(['error' => 'La session n’a pas été ouverte'], 400);
+    }
+
+$user->session_fermee = now();
+
+    // Calcul du nombre d'heures travaillées
+    $heures = \Carbon\Carbon::parse($user->session_ouverte)
+        ->diffInMinutes($user->session_fermee) / 60;
+
+    $user->nb_heure_par_jour = round($heures, 2);
+
+    // Calcul du salaire uniquement à la fermeture
+    if ($user->prix_heure) {
+        $user->salaire += $user->nb_heure_par_jour * $user->prix_heure;
+    }
+
+    $user->save();
+
+    return response()->json([
+        'message' => 'Session fermée avec succès',
+        'user' => $user
+    ]);
+}
+
     // public function absence(){
     //     $yesterday = Carbon::yesterday()->format('Y-m-d');
     //     $employees = User::where('role', 'employee')->get();
@@ -302,7 +328,7 @@ class AuthController extends Controller
             return response()->json(['error' => 'Le nouveau mot de passe et la confirmation du mot de passe ne correspondent pas'], 404);
         }
         $user->password = Hash::make($request->new_password);
-         $user->first_login = false;
+        //  $user->first_login = false;
         $user->save();
         return response()->json(['message' => 'Password updated successfully'], 200);
     }
@@ -311,12 +337,30 @@ class AuthController extends Controller
         $employees = User::where('role', 'employee')->get();
         return response()->json($employees);
     }
+      public function getData()
+    {
+        $users = User::whereIn('role', ['employee', 'RH'])->get();
+        return response()->json($users);
+    }
     public function  statUser(){
     {
-    $employees = User::where('role', 'employee')->count();
-    return response()->json(['count' => $employees]);
+        $employees = User::where('role', 'employee')->count();
+        return response()->json(['count' => $employees]);
     }
 }
-
+    public function activeAccount($id)
+    {
+        $user = User::find($id);
+        $user->status = true;
+        $user->save();
+        return response()->json(['message' => 'User banned successfully']);
+    }
+    public function AccounNotActive($id)
+    {
+        $user = User::find($id);
+        $user->status = false;
+        $user->save();
+        return response()->json(['message' => 'User unbanned successfully']);
+    }
 
 }

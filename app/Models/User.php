@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use App\Models\departements;
+
 
 
 class User extends Authenticatable implements JWTSubject
@@ -29,6 +31,7 @@ class User extends Authenticatable implements JWTSubject
         'nb_heure_par_jour',
         'nb_jour_connecte',
         'nb_jour_conge',
+        "departement_id"
 
     ];
 
@@ -49,5 +52,9 @@ class User extends Authenticatable implements JWTSubject
   public function getJWTCustomClaims()
     {
         return [];
+    }
+     public function departements()
+    {
+        return $this->belongsTo(departements::class);
     }
 }
