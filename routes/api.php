@@ -29,6 +29,7 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::get('statUser', [AuthController::class, 'statUser'])->middleware(['auth:api','role:admin,RH']);
     Route::put('activeAccount/{id}', [AuthController::class, 'activeAccount'])->middleware(['auth:api', 'role:admin,RH']);
     Route::put('AccounNotActive/{id}', [AuthController::class, 'AccounNotActive'])->middleware(['auth:api', 'role:admin,RH']);
+
 });
 //departements
 Route::group(['prefix' => 'departements'], function () {
@@ -39,3 +40,11 @@ Route::group(['prefix' => 'departements'], function () {
     Route::delete('delete_departement/{id}', [DepartementController::class, 'destroy'])->middleware(['auth:api', 'role:admin']);
     Route::get('searchDepartement/search', [DepartementController::class, 'search'])->middleware(['auth:api', 'role:admin']);
 });
+Route::group(['prefix' => 'absence'],  function () {
+    Route::post('verifier-absences', [AuthController::class, 'Absence'])->middleware('role:admin,RH');
+    Route::get('absence/{id}', [AuthController::class, 'absenceEmployee'])->middleware('role:admin,RH,employee');
+    Route::post('reset-salaire', [AuthController::class, 'resetSalaireMensuel'])->middleware('role:admin');
+    Route::get('most-absent', [AuthController::class, 'EmployeePlusAbsent'])->middleware('role:admin,RH');
+    Route::get('most-present', [AuthController::class, 'EmployeePlusPresent'])->middleware('role:admin,RH');
+});
+

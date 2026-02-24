@@ -39,6 +39,9 @@ return new class extends Migration
             $table->foreign('departement_id')->references('id')->on('departements');
 
             // $table->boolean('first_login')->default(true);
+            $table->integer('jours_absence')->default(0);
+            $table->integer('jours_presence')->default(0);
+            $table->date('derniere_presence')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
