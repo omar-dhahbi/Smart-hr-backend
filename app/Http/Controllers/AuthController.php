@@ -108,9 +108,9 @@ class AuthController extends Controller
             'user' => $user,
             'token' => $token,
             'type' => 'bearer',
-            'expired' => auth()->factory()->getTTL()*60,
+            'expired' => null, // token infini, pas d'expiration
             'role' => auth()->user()->role,
-            'first_login' => $user->first_login
+            // 'first_login' => $user->first_login
         ]);
     }
 
@@ -246,26 +246,28 @@ class AuthController extends Controller
         $user->save();
         return response()->json(['user' => $user], 200);
     }
-   public function ouvrirSession()
-{
+  public function ouvrirSession() {
     $user = auth()->user();
 
     if ($user->role !== 'employee') {
-        return response()->json(['error' => 'Réservé aux employés'], 403);
+        return response()->json(['error' => 'Action réservée aux employés'], 403);
     }
 
+    // Vérifier si session déjà ouverte
     if ($user->session_ouverte && !$user->session_fermee) {
-        return response()->json(['error' => 'Session déjà ouverte'], 400);
+        return response()->json(['error' => 'La session est déjà ouverte'], 400);
     }
 
     $user->session_ouverte = now();
-    $user->session_fermee = null;
-    $user->derniere_presence = now()->toDateString();
-
+    $user->session_fermee = null; // Reset session fermée
     $user->save();
 
-    return response()->json(['message' => 'Session ouverte', 'user' => $user]);
+    return response()->json([
+        'message' => 'Session ouverte avec succès',
+        'session_ouverte' => $user->session_ouverte
+    ]);
 }
+
 
 
 public function fermerSession()
@@ -331,22 +333,7 @@ public function Absence()
 
         return response()->json(['message' => 'Reset mensuel effectué']);
     }
-    public function EmployeePlusAbsent()
-    {
-        $user = User::where('role','employee')
-            ->orderByDesc('jours_absence')
-            ->first();
 
-        return response()->json($user);
-    }
-    public function EmployeePlusPresent()
-{
-    $user = User::where('role','employee')
-        ->orderByDesc('jours_presence')
-        ->first();
-
-    return response()->json($user);
-}
 public function absenceEmployee($id)
 {
     $user = User::find($id);
@@ -357,11 +344,6 @@ public function absenceEmployee($id)
         'presence' => $user->jours_presence
     ]);
 }
-
-
-
-
-
     public function updatePassword1(Request $request, $id)
     {
         $user = User::find($id);
@@ -412,5 +394,17 @@ public function absenceEmployee($id)
         $user->save();
         return response()->json(['message' => 'User unbanned successfully']);
     }
+
+
+    public function getSessionStatus()
+{
+    $user = auth()->user();
+
+    return response()->json([
+        'session_ouverte' => $user->session_ouverte ? true : false,
+        'session_fermee' => $user->session_fermee ? true : false
+    ]);
+}
+
 
 }
