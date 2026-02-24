@@ -246,72 +246,122 @@ class AuthController extends Controller
         $user->save();
         return response()->json(['user' => $user], 200);
     }
-   public function ouvrirSession() {
+   public function ouvrirSession()
+{
     $user = auth()->user();
 
     if ($user->role !== 'employee') {
-        return response()->json(['error' => 'Action réservée aux employés'], 403);
+        return response()->json(['error' => 'Réservé aux employés'], 403);
     }
+
+    if ($user->session_ouverte && !$user->session_fermee) {
+        return response()->json(['error' => 'Session déjà ouverte'], 400);
+    }
+
     $user->session_ouverte = now();
-    if ($user->nb_heure_par_jour && $user->prix_heure) {
-        $user->salaire += $user->nb_heure_par_jour * $user->prix_heure;
-    }
+    $user->session_fermee = null;
+    $user->derniere_presence = now()->toDateString();
+
     $user->save();
 
-    return response()->json(['message' => 'Session ouverte avec succès', 'user' => $user]);
+    return response()->json(['message' => 'Session ouverte', 'user' => $user]);
 }
 
-public function fermerSession() {
+
+public function fermerSession()
+{
     $user = auth()->user();
 
-     if ($user->role !== 'employee') {
-        return response()->json(['error' => 'Action réservée aux employés'], 403);
-    }
-
     if (!$user->session_ouverte) {
-        return response()->json(['error' => 'La session n’a pas été ouverte'], 400);
+        return response()->json(['error' => 'Aucune session ouverte'], 400);
     }
 
-$user->session_fermee = now();
+    $user->session_fermee = now();
 
-    // Calcul du nombre d'heures travaillées
-    $heures = \Carbon\Carbon::parse($user->session_ouverte)
+    $heures = Carbon::parse($user->session_ouverte)
         ->diffInMinutes($user->session_fermee) / 60;
 
     $user->nb_heure_par_jour = round($heures, 2);
 
-    // Calcul du salaire uniquement à la fermeture
-    if ($user->prix_heure) {
-        $user->salaire += $user->nb_heure_par_jour * $user->prix_heure;
-    }
+    $salaireJour = $user->nb_heure_par_jour * $user->prix_heure;
+
+    $user->salaire += $salaireJour;
+
+    $user->jours_presence += 1;
 
     $user->save();
 
     return response()->json([
-        'message' => 'Session fermée avec succès',
-        'user' => $user
+        'message' => 'Session fermée',
+        'heures' => $user->nb_heure_par_jour,
+        'gain' => $salaireJour,
+        'salaire_total' => $user->salaire
+    ]);
+}
+public function Absence()
+{
+    $today = now()->toDateString();
+
+    $employees = User::where('role', 'employee')->get();
+
+    foreach ($employees as $emp) {
+
+        if ($emp->derniere_presence != $today) {
+
+            $emp->jours_absence += 1;
+            $penalite = $emp->prix_heure * 8;
+            $emp->salaire -= $penalite;
+            if ($emp->salaire < 0) {
+                $emp->salaire = 0;
+            }
+            $emp->save();
+        }
+    }
+
+    return response()->json(['message' => 'Absences vérifiées']);
+}
+
+    public function resetSalaireMensuel()
+    {
+        User::where('role', 'employee')->update([
+            'salaire' => 0,
+            'jours_absence' => 0,
+            'jours_presence' => 0
+        ]);
+
+        return response()->json(['message' => 'Reset mensuel effectué']);
+    }
+    public function EmployeePlusAbsent()
+    {
+        $user = User::where('role','employee')
+            ->orderByDesc('jours_absence')
+            ->first();
+
+        return response()->json($user);
+    }
+    public function EmployeePlusPresent()
+{
+    $user = User::where('role','employee')
+        ->orderByDesc('jours_presence')
+        ->first();
+
+    return response()->json($user);
+}
+public function absenceEmployee($id)
+{
+    $user = User::find($id);
+
+    return response()->json([
+        'nom' => $user->nom,
+        'absence' => $user->jours_absence,
+        'presence' => $user->jours_presence
     ]);
 }
 
-    // public function absence(){
-    //     $yesterday = Carbon::yesterday()->format('Y-m-d');
-    //     $employees = User::where('role', 'employee')->get();
-    //     foreach ($employees as $emp){
-    //         $lastSession = $emp->updated_at->format('Y-m-d');
-    //         if ($lastSession != $yesterday) {
-    //             if ($emp->nb_jour_conge > 0) {
-    //                 $emp->nb_jour_conge -= 1;
-    //             } else {
-    //                 $user->salaire -= $user->prix_heure * $user->nb_heure_par_jour;
-    //                  if ($emp->salaire < 0) {
-    //                     $emp->salaire = 0;
-    //                 }
-    //             }
-    //             $emp->save();
-    //         }
-    //     }
-    //     return response()->json(['message' => 'Vérification d’absence effectuée']);
-    // }
+
+
+
+
     public function updatePassword1(Request $request, $id)
     {
         $user = User::find($id);
