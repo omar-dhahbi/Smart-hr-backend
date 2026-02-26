@@ -6,6 +6,8 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\StatistiqueController;
+use App\Http\Controllers\TacheController;
+
 
 
 
@@ -22,7 +24,6 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::get('User/{id}', [AuthController::class, 'getUserById'])->middleware(['auth:api', 'role:admin,employee,RH']);
     Route::put('verifMail/{id}', [AuthController::class, 'verifMail']);
     Route::put('updateUser/{id}', [AuthController::class, 'UpdateUser'])->middleware(['auth:api','role:admin,employee,RH']);
-    // Route::get('/absence', [AuthController::class, 'absence']);
     Route::put('updatepassword1/{id}', [AuthController::class, 'updatePassword1'])->middleware(['auth:api','role:admin,employee']);
     Route::get('employees', [AuthController::class, 'index'])->middleware(['auth:api','role:RH']);
     Route::get('getData', [AuthController::class, 'getData'])->middleware(['auth:api','role:admin']);
@@ -42,6 +43,7 @@ Route::group(['prefix' => 'departements'], function () {
     Route::delete('delete_departement/{id}', [DepartementController::class, 'destroy'])->middleware(['auth:api', 'role:admin']);
     Route::get('searchDepartement/search', [DepartementController::class, 'search'])->middleware(['auth:api', 'role:admin']);
 });
+//absence
 Route::group(['prefix' => 'absence'],  function () {
     Route::post('verifier-absences', [AuthController::class, 'Absence'])->middleware('role:admin,RH');
     Route::get('absence/{id}', [AuthController::class, 'absenceEmployee'])->middleware('role:admin,RH,employee');
@@ -49,13 +51,20 @@ Route::group(['prefix' => 'absence'],  function () {
     Route::get('most-absent', [StatistiqueController::class, 'EmployeePlusAbsent'])->middleware('role:admin,RH');
     Route::get('most-present', [StatistiqueController::class, 'EmployeePlusPresent'])->middleware('role:admin,RH');
 });
-Route::prefix('stat')->middleware(['auth:api'])->group(function () {
+Route::group(['prefix' => 'stat'],  function () {
     Route::get('count-departements', [StatistiqueController::class, 'CountDepartement'])->middleware('role:admin,RH');
     Route::get('count-employees', [StatistiqueController::class, 'CountEmployee'])->middleware('role:admin,RH');
     Route::get('employees-present-today', [StatistiqueController::class, 'EmployeesPresentToday'])->middleware(['auth:api','role:admin,RH']);
     Route::get('employees-present-list', [StatistiqueController::class, 'EmployeesPresentList'])->middleware(['auth:api','role:admin,RH']);
-    Route::get('employees-absent-today', [StatistiqueController::class, 'EmployeesAbsentToday'])
-    ->middleware(['auth:api','role:admin,RH']);
-
+    Route::get('employees-absent-today', [StatistiqueController::class, 'EmployeesAbsentToday'])->middleware(['auth:api','role:admin,RH']);
+    Route::get('most-absent/{month}/{year}', [StatistiqueController::class, 'EmployeePlusAbsentByMonth'])->middleware('role:admin,RH');
+    Route::get('most-present/{month}/{year}', [StatistiqueController::class, 'EmployeePlusPresentByMonth'])->middleware('role:admin,RH');
 });
+
+Route::group(['prefix' => 'tache'],  function () {
+    Route::post('get_taches', [TacheController::class, 'index'])->middleware('role:admin,employee');
+    Route::get('get_tache/{id}', [TacheController::class, 'show'])->middleware('role:admin,RH,employee');
+    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware(['auth:api', 'role:admin']);
+  Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware(['auth:api', 'role:admin']);
+  Route::get('searchTache/search', [TacheController::class, 'search'])->middleware(['auth:api', 'role:admin']);});
 

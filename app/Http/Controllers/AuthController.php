@@ -192,6 +192,11 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json(['error' => 'Utilisateur introuvable'], 404);
         }
+            if ($user->verif_email == 1) {
+        return response()->json([
+            'error' => 'Compte déjà vérifié'
+        ], 410);
+    }
 
         if (!$user->verif_email) {
             $user->verif_email = true;
