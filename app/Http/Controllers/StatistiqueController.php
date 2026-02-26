@@ -83,5 +83,66 @@ public function EmployeesAbsenceToday()
     ]);
 }
 
+public function EmployeePlusAbsentByMonth($month, $year)
+{
+    // Tous les employés
+    $employees = User::where('role', 'employee')->get();
+
+    // On map chaque employé pour calculer le nombre de jours d'absence dans le mois donné
+    $employeesAbsence = $employees->map(function ($user) use ($month, $year) {
+        $totalDays = User::where('id', $user->id)
+            ->whereYear('derniere_presence', $year)
+            ->whereMonth('derniere_presence', $month)
+            ->count(); // Nombre de jours présents
+
+        // On calcule le nombre de jours d'absence pour le mois
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $absenceDays = $daysInMonth - $totalDays;
+
+        return [
+            'id' => $user->id,
+            'nom' => $user->nom,
+            'prenom' => $user->prenom,
+            'photo' => $user->photo,
+            'jours_absence_mois' => $absenceDays,
+        ];
+    });
+
+    // On récupère celui qui a le plus d'absences
+    $mostAbsent = $employeesAbsence->sortByDesc('jours_absence_mois')->first();
+
+    return response()->json($mostAbsent);
+}
+
+public function EmployeePlusPresentByMonth($month, $year)
+{
+    // Tous les employés
+    $employees = User::where('role', 'employee')->get();
+
+    // On map chaque employé pour calculer le nombre de jours de présence dans le mois donné
+    $employeesPresence = $employees->map(function ($user) use ($month, $year) {
+        $presenceDays = User::where('id', $user->id)
+            ->whereYear('derniere_presence', $year)
+            ->whereMonth('derniere_presence', $month)
+            ->count();
+
+        return [
+            'id' => $user->id,
+            'nom' => $user->nom,
+            'prenom' => $user->prenom,
+            'photo' => $user->photo,
+            'jours_presence_mois' => $presenceDays,
+        ];
+    });
+
+    // On récupère celui qui a le plus de présences
+    $mostPresent = $employeesPresence->sortByDesc('jours_presence_mois')->first();
+
+    return response()->json($mostPresent);
+}
+
+
+
+
 
 }
