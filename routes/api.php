@@ -7,10 +7,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TacheController;
-
-
-
-
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -19,7 +15,7 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::put('restarpasword/{email}', [AuthController::class, 'restarpassword']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('logout', [AuthController::class, 'logout'])->middleware(['auth:api', 'role:admin,employee']);
+    Route::post('logout', [AuthController::class, 'logout'])->middleware(['auth:api','role:admin,employee,RH']);
     Route::put('updatepassword/{id}', [AuthController::class, 'updatepassword']);
     Route::get('User/{id}', [AuthController::class, 'getUserById'])->middleware(['auth:api', 'role:admin,employee,RH']);
     Route::put('verifMail/{id}', [AuthController::class, 'verifMail']);
@@ -60,11 +56,13 @@ Route::group(['prefix' => 'stat'],  function () {
     Route::get('most-absent/{month}/{year}', [StatistiqueController::class, 'EmployeePlusAbsentByMonth'])->middleware('role:admin,RH');
     Route::get('most-present/{month}/{year}', [StatistiqueController::class, 'EmployeePlusPresentByMonth'])->middleware('role:admin,RH');
 });
+Route::group(['prefix' => 'taches'],  function () {
+    Route::post('get_taches', [TacheController::class, 'index'])->middleware('role:admin,employee:chef');
+    Route::get('get_tache/{id}', [TacheController::class, 'show'])->middleware('role:admin,employee:chef');
+    Route::post('add_tache', [TacheController::class, 'store'])->middleware('role:admin,employee:chef');
+    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware('role:admin,employee:chef');
+    Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware('role:admin,employee:chef');
+    Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:admin,employee:chef');
+});
 
-Route::group(['prefix' => 'tache'],  function () {
-    Route::post('get_taches', [TacheController::class, 'index'])->middleware('role:admin,employee');
-    Route::get('get_tache/{id}', [TacheController::class, 'show'])->middleware('role:admin,RH,employee');
-    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware(['auth:api', 'role:admin']);
-  Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware(['auth:api', 'role:admin']);
-  Route::get('searchTache/search', [TacheController::class, 'search'])->middleware(['auth:api', 'role:admin']);});
 

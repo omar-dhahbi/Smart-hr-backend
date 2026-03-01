@@ -17,13 +17,10 @@ return new class extends Migration
             $table->text('Description');
             $table->date('DateDebut');
             $table->date('DateFin');
-
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->boolean('status')->default(false);
-
             $table->timestamps();
-
         });
     }
 

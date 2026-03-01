@@ -28,7 +28,7 @@ class DepartementController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'NomDepartement' => 'required|unique:departements|min:3|string',
-            'Description' => 'required|min:10',
+            // 'Description' => 'required|min:10',
         ]);
 
         if ($validator->fails()) {
@@ -37,7 +37,7 @@ class DepartementController extends Controller
 
         $departement = departements::create([
             'NomDepartement' => $request->NomDepartement,
-            'Description' => $request->Description,
+            // 'Description' => $request->Description,
         ]);
 
         return response()->json([
@@ -56,7 +56,7 @@ class DepartementController extends Controller
 
         $validator = Validator::make($request->all(), [
             'NomDepartement' => "required|min:3|unique:departements,NomDepartement,$id",
-            'Description' => 'required|min:10',
+            // 'Description' => 'required|min:10',
         ]);
 
         if ($validator->fails()) {
@@ -64,7 +64,7 @@ class DepartementController extends Controller
         }
         $departement->update([
             'NomDepartement' => $request->NomDepartement,
-            'Description' => $request->Description,
+            // 'Description' => $request->Description,
         ]);
 
         return response()->json([
@@ -89,7 +89,7 @@ class DepartementController extends Controller
         $query = $request->search;
 
         $departements = departements::where('NomDepartement', 'like', "%$query%")
-            ->orWhere('Description', 'like', "%$query%")
+            // ->orWhere('Description', 'like', "%$query%")
             ->get();
 
         return response()->json($departements);

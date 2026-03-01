@@ -12,24 +12,38 @@ use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
 class CheckRole
 {
-    public function handle(Request $request, Closure $next, ...$roles): Response
-    {
-        try {
-            $user = JWTAuth::parseToken()->authenticate();
-        } catch (TokenExpiredException $e) {
-            return $this->unauthorized('Your token has expired. Please login again.');
-        } catch (TokenInvalidException $e) {
-            return $this->unauthorized('Your token is invalid. Please login again.');
-        } catch (JWTException $e) {
-            return $this->unauthorized('Please attach a Bearer Token to your request.');
-        }
+   public function handle(Request $request, Closure $next, ...$roles): Response
+{
+    try {
+        $user = JWTAuth::parseToken()->authenticate();
+    } catch (TokenExpiredException $e) {
+        return $this->unauthorized('Token expired.');
+    } catch (TokenInvalidException $e) {
+        return $this->unauthorized('Token invalid.');
+    } catch (JWTException $e) {
+        return $this->unauthorized('Token required.');
+    }
 
-        if ($user && in_array($user->role, $roles)) {
+    if (!$user) {
+        return $this->unauthorized();
+    }
+
+    foreach ($roles as $role) {
+
+        if ($user->role === $role) {
             return $next($request);
         }
 
-        return $this->unauthorized();
+        if ($role === 'employee:chef' &&
+            $user->role === 'employee' &&
+            $user->grade === 'chef') {
+            return $next($request);
+        }
     }
+
+    return $this->unauthorized();
+}
+
 
     private function unauthorized($message = 'You are unauthorized to access this resource')
     {
