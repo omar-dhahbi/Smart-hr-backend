@@ -28,11 +28,11 @@ return [
 
 
 
-    'ttl' => null,
+    'ttl' => 1440,
 
 
 
-    'refresh_ttl' => null, // refresh infini
+'refresh_ttl' => 1440,
 
 
 

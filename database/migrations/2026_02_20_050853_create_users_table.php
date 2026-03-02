@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamp('session_fermee')->nullable();
             $table->double('prix_heure')->nullable();
             $table->double('salaire')->default(0);
-            $table->integer('nb_heure_par_jour')->nullable();
+            $table->double('nb_heure_par_jour')->nullable();
             $table->integer('nb_jour_conge')->default(21);
             // $table->integer('heures_normales_par_jour')->default(8);
             $table->string('Contrat')->nullable();
@@ -35,6 +35,7 @@ return new class extends Migration
             $table->unsignedBigInteger('departement_id')->nullable();
             $table->foreign('departement_id')->references('id')->on('departements');
             // $table->boolean('first_login')->default(true);
+
             $table->integer('jours_absence')->default(0);
             $table->integer('jours_presence')->default(0);
             $table->date('derniere_presence')->nullable();
@@ -48,4 +49,3 @@ return new class extends Migration
     }
 };
 
-    
