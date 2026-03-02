@@ -56,15 +56,14 @@ public function EmployeesAbsenceToday()
         'total' => $total
     ]);
 }
+
     public function EmployeesPresentList(){
         $today = date('Y-m-d');
         $users = User::where('role', 'employee')->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo',]);
 
         return response()->json($users);
     }
-
-    public function EmployeesAbsentToday()
-{
+    public function EmployeesAbsentTodayList() {
     $today = date('Y-m-d');
 
     $absents = User::where('role', 'employee')
@@ -73,73 +72,120 @@ public function EmployeesAbsenceToday()
                   ->orWhereDate('derniere_presence', '!=', $today);
         })
         ->get(['id', 'nom', 'prenom', 'photo']);
+
+    return response()->json($absents);
+}
+    public function EmployeesAbsentToday()
+{
+    $today = date('Y-m-d');
+
+    $absents = User::where('role', 'employee')
+        ->where(function($query) use ($today) {
+            $query->whereNull('derniere_presence')
+                  ->orWhereDate('derniere_presence', '!=', $today);})
+        ->get(['id', 'nom', 'prenom', 'photo']);
     $total = User::where('role', 'employee')->count();
     $countAbsent = $absents->count();
-
     return response()->json([
         'absent' => $countAbsent,
         'total' => $total,
         'employees' => $absents
     ]);
 }
+    // Employé le plus absent du mois dernier
 
-public function EmployeePlusAbsentByMonth($month, $year)
+ // Employé le plus absent du mois dernier
+// public function EmployeLePlusAbsentMoisDernier()
+// {
+//     // Obtenir le premier et dernier jour du mois dernier
+//     $debutMoisDernier = now()->subMonth()->startOfMonth()->toDateString();
+//     $finMoisDernier = now()->subMonth()->endOfMonth()->toDateString();
+
+//     // Récupérer tous les employés
+//     $employes = User::where('role', 'employee')->get();
+
+//     $employeLePlusAbsent = null;
+//     $maxAbsences = -1;
+
+//     foreach ($employes as $employe) {
+//         // Compter le nombre de jours du mois dernier où il n'a pas pointé
+//         $joursAbsence = 0;
+
+//         // Si derniere_presence est NULL ou hors du mois dernier, considérer absence
+//         $presence = $employe->derniere_presence;
+
+//         // On parcourt chaque jour du mois dernier
+//         $periode = \Carbon\CarbonPeriod::create($debutMoisDernier, $finMoisDernier);
+
+//         foreach ($periode as $jour) {
+//             $jourStr = $jour->toDateString();
+//             if ($presence !== $jourStr) {
+//                 $joursAbsence++;
+//             }
+//         }
+
+//         // Mettre à jour le champ jours_absence dans la base
+//         $employe->jours_absence = $joursAbsence;
+//         $employe->save();
+
+//         // Vérifier si c'est l'employé le plus absent
+//         if ($joursAbsence > $maxAbsences) {
+//             $maxAbsences = $joursAbsence;
+//             $employeLePlusAbsent = $employe;
+//         }
+//     }
+
+//     if ($employeLePlusAbsent) {
+//         return response()->json([
+//             'nom' => $employeLePlusAbsent->nom,
+//             'prenom' => $employeLePlusAbsent->prenom,
+//             'photo' => $employeLePlusAbsent->photo,
+//             'absences' => $maxAbsences
+//         ]);
+//     }
+
+//     return response()->json(['message' => 'Aucun employé trouvé']);
+// }
+
+
+// Employé le plus présent du mois dernier
+public function EmployeLePlusPresentMoisDernier()
 {
-    // Tous les employés
-    $employees = User::where('role', 'employee')->get();
+    // Obtenir le premier et dernier jour du mois dernier
+    $debutMoisDernier = now()->subMonth()->startOfMonth()->toDateString();
+    $finMoisDernier = now()->subMonth()->endOfMonth()->toDateString();
 
-    // On map chaque employé pour calculer le nombre de jours d'absence dans le mois donné
-    $employeesAbsence = $employees->map(function ($user) use ($month, $year) {
-        $totalDays = User::where('id', $user->id)
-            ->whereYear('derniere_presence', $year)
-            ->whereMonth('derniere_presence', $month)
-            ->count(); // Nombre de jours présents
+    // Récupérer tous les employés
+    $employes = User::where('role', 'employee')->get();
 
-        // On calcule le nombre de jours d'absence pour le mois
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $absenceDays = $daysInMonth - $totalDays;
+    $employeLePlusPresent = null;
+    $maxPresences = -1;
 
-        return [
-            'id' => $user->id,
-            'nom' => $user->nom,
-            'prenom' => $user->prenom,
-            'photo' => $user->photo,
-            'jours_absence_mois' => $absenceDays,
-        ];
-    });
-
-    // On récupère celui qui a le plus d'absences
-    $mostAbsent = $employeesAbsence->sortByDesc('jours_absence_mois')->first();
-
-    return response()->json($mostAbsent);
-}
-
-public function EmployeePlusPresentByMonth($month, $year)
-{
-    // Tous les employés
-    $employees = User::where('role', 'employee')->get();
-
-    // On map chaque employé pour calculer le nombre de jours de présence dans le mois donné
-    $employeesPresence = $employees->map(function ($user) use ($month, $year) {
-        $presenceDays = User::where('id', $user->id)
-            ->whereYear('derniere_presence', $year)
-            ->whereMonth('derniere_presence', $month)
+    foreach ($employes as $employe) {
+        // Compter les présences pendant le mois dernier
+        $presences = User::where('id', $employe->id)
+            ->whereDate('derniere_presence', '>=', $debutMoisDernier)
+            ->whereDate('derniere_presence', '<=', $finMoisDernier)
             ->count();
 
-        return [
-            'id' => $user->id,
-            'nom' => $user->nom,
-            'prenom' => $user->prenom,
-            'photo' => $user->photo,
-            'jours_presence_mois' => $presenceDays,
-        ];
-    });
+        if ($presences > $maxPresences) {
+            $maxPresences = $presences;
+            $employeLePlusPresent = $employe;
+        }
+    }
 
-    // On récupère celui qui a le plus de présences
-    $mostPresent = $employeesPresence->sortByDesc('jours_presence_mois')->first();
+    if ($employeLePlusPresent) {
+        return response()->json([
+            'nom' => $employeLePlusPresent->nom,
+            'prenom' => $employeLePlusPresent->prenom,
+            'photo' => $employeLePlusPresent->photo,
+            'presences' => $maxPresences
+        ]);
+    }
 
-    return response()->json($mostPresent);
+    return response()->json(['message' => 'Aucun employé trouvé']);
 }
+
 
 
 

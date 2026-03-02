@@ -117,7 +117,6 @@ class AuthController extends Controller
 
    public function logout(){
         try {
-
             $token = JWTAuth::getToken();
             JWTAuth::invalidate($token);
 
@@ -251,27 +250,28 @@ class AuthController extends Controller
         $user->save();
         return response()->json(['user' => $user], 200);
     }
-  public function ouvrirSession() {
+  public function ouvrirSession()
+{
     $user = auth()->user();
 
-    if ($user->role !== 'employee') {
-        return response()->json(['error' => 'Action réservée aux employés'], 403);
+if ($user->role !== 'employee' && $user->role !== 'RH') {
+        return response()->json(['error' => 'user non utiliser'], 403);
     }
 
-    // Vérifier si session déjà ouverte
     if ($user->session_ouverte && !$user->session_fermee) {
-        return response()->json(['error' => 'La session est déjà ouverte'], 400);
+        return response()->json(['error' => 'Session déjà ouverte'], 400);
     }
 
     $user->session_ouverte = now();
-    $user->session_fermee = null; // Reset session fermée
+    $user->session_fermee = null;
     $user->save();
 
     return response()->json([
         'message' => 'Session ouverte avec succès',
-        'session_ouverte' => $user->session_ouverte
+        'heure_debut' => $user->session_ouverte
     ]);
 }
+
 
 
 
@@ -283,38 +283,59 @@ public function fermerSession()
         return response()->json(['error' => 'Aucune session ouverte'], 400);
     }
 
+    if ($user->session_fermee) {
+        return response()->json(['error' => 'Session déjà fermée'], 400);
+    }
+
     $user->session_fermee = now();
 
+    // 🔹 Calcul heures travaillées
     $heures = Carbon::parse($user->session_ouverte)
         ->diffInMinutes($user->session_fermee) / 60;
 
-    $user->nb_heure_par_jour = round($heures, 2);
+    $heures = round($heures, 2);
 
-    $salaireJour = $user->nb_heure_par_jour * $user->prix_heure;
+    $user->nb_heure_par_jour = $heures;
 
+    // 🔹 Salaire normal (max 8h)
+    if ($heures <= 8) {
+        $salaireJour = $heures * $user->prix_heure;
+    } else {
+
+        // 🔹 8h normales
+        $salaireNormal = 8 * $user->prix_heure;
+
+        // 🔹 Heures supplémentaires
+        $heuresSupp = $heures - 8;
+
+        // 🔹 Bonus heure sup = prix_heure normal
+        $salaireSupp = $heuresSupp * $user->prix_heure;
+
+        $salaireJour = $salaireNormal + $salaireSupp;
+    }
+
+    // 🔹 Ajouter au salaire total
     $user->salaire += $salaireJour;
 
     $user->jours_presence += 1;
+    $user->derniere_presence = now()->toDateString();
 
     $user->save();
 
     return response()->json([
-        'message' => 'Session fermée',
-        'heures' => $user->nb_heure_par_jour,
-        'gain' => $salaireJour,
+        'message' => 'Session fermée avec succès',
+        'heures_travaillees' => $heures,
+        'gain_du_jour' => $salaireJour,
         'salaire_total' => $user->salaire
     ]);
 }
+
 public function Absence()
 {
     $today = now()->toDateString();
-
     $employees = User::where('role', 'employee')->get();
-
     foreach ($employees as $emp) {
-
         if ($emp->derniere_presence != $today) {
-
             $emp->jours_absence += 1;
             $penalite = $emp->prix_heure * 8;
             $emp->salaire -= $penalite;
@@ -324,10 +345,8 @@ public function Absence()
             $emp->save();
         }
     }
-
     return response()->json(['message' => 'Absences vérifiées']);
 }
-
     public function resetSalaireMensuel()
     {
         User::where('role', 'employee')->update([

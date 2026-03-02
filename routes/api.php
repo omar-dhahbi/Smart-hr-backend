@@ -23,8 +23,8 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::put('updatepassword1/{id}', [AuthController::class, 'updatePassword1'])->middleware(['auth:api','role:admin,employee']);
     Route::get('employees', [AuthController::class, 'index'])->middleware(['auth:api','role:RH']);
     Route::get('getData', [AuthController::class, 'getData'])->middleware(['auth:api','role:admin']);
-    Route::post('/ouvrir-session', [AuthController::class, 'ouvrirSession'])->middleware(['auth:api','role:employee']);
-    Route::post('/fermer-session', [AuthController::class, 'fermerSession'])->middleware(['auth:api','role:employee']);
+    Route::post('/ouvrir-session', [AuthController::class, 'ouvrirSession'])->middleware(['auth:api','role:employee,RH']);
+    Route::post('/fermer-session', [AuthController::class, 'fermerSession'])->middleware(['auth:api','role:employee,RH']);
     Route::get('statUser', [AuthController::class, 'statUser'])->middleware(['auth:api','role:admin,RH']);
     Route::put('activeAccount/{id}', [AuthController::class, 'activeAccount'])->middleware(['auth:api', 'role:admin,RH']);
     Route::put('AccounNotActive/{id}', [AuthController::class, 'AccounNotActive'])->middleware(['auth:api', 'role:admin,RH']);
@@ -53,8 +53,10 @@ Route::group(['prefix' => 'stat'],  function () {
     Route::get('employees-present-today', [StatistiqueController::class, 'EmployeesPresentToday'])->middleware(['auth:api','role:admin,RH']);
     Route::get('employees-present-list', [StatistiqueController::class, 'EmployeesPresentList'])->middleware(['auth:api','role:admin,RH']);
     Route::get('employees-absent-today', [StatistiqueController::class, 'EmployeesAbsentToday'])->middleware(['auth:api','role:admin,RH']);
-    Route::get('most-absent/{month}/{year}', [StatistiqueController::class, 'EmployeePlusAbsentByMonth'])->middleware('role:admin,RH');
-    Route::get('most-present/{month}/{year}', [StatistiqueController::class, 'EmployeePlusPresentByMonth'])->middleware('role:admin,RH');
+    Route::get('most-absent-last-month', [StatistiqueController::class, 'EmployeLePlusAbsentMoisDernier']);
+    Route::get('most-present-last-month', [StatistiqueController::class, 'EmployeLePlusPresentMoisDernier']);
+    Route::get('employees-absent-list', [StatistiqueController::class, 'EmployeesAbsentTodayList'])
+    ->middleware(['auth:api','role:admin,RH']);
 });
 Route::group(['prefix' => 'taches'],  function () {
     Route::post('get_taches', [TacheController::class, 'index'])->middleware('role:admin,employee:chef');
