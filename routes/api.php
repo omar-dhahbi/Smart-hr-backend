@@ -19,16 +19,16 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::put('updatepassword/{id}', [AuthController::class, 'updatepassword']);
     Route::get('User/{id}', [AuthController::class, 'getUserById'])->middleware(['auth:api', 'role:admin,employee,RH']);
     Route::put('verifMail/{id}', [AuthController::class, 'verifMail']);
-    Route::put('updateUser/{id}', [AuthController::class, 'UpdateUser'])->middleware(['auth:api','role:admin,employee,RH']);
-    Route::put('updatepassword1/{id}', [AuthController::class, 'updatePassword1'])->middleware(['auth:api','role:admin,employee']);
+    Route::put('updateUser/{id}', [AuthController::class, 'UpdateUser'])->middleware(['auth:api','role:admin,employee,RH,ChefProjet']);
+    Route::put('updatepassword1/{id}', [AuthController::class, 'updatePassword1'])->middleware(['auth:api','role:admin,employee,ChefProjet,RH']);
     Route::get('employees', [AuthController::class, 'index'])->middleware(['auth:api','role:RH']);
     Route::get('getData', [AuthController::class, 'getData'])->middleware(['auth:api','role:admin']);
-    Route::post('/ouvrir-session', [AuthController::class, 'ouvrirSession'])->middleware(['auth:api','role:employee,RH']);
-    Route::post('/fermer-session', [AuthController::class, 'fermerSession'])->middleware(['auth:api','role:employee,RH']);
+    Route::post('/ouvrir-session', [AuthController::class, 'ouvrirSession'])->middleware(['auth:api','role:employee,RH,ChefProjet']);
+    Route::post('/fermer-session', [AuthController::class, 'fermerSession'])->middleware(['auth:api','role:employee,RH,ChefProjet']);
     Route::get('statUser', [AuthController::class, 'statUser'])->middleware(['auth:api','role:admin,RH']);
     Route::put('activeAccount/{id}', [AuthController::class, 'activeAccount'])->middleware(['auth:api', 'role:admin,RH']);
     Route::put('AccounNotActive/{id}', [AuthController::class, 'AccounNotActive'])->middleware(['auth:api', 'role:admin,RH']);
-    Route::get('session-status', [AuthController::class, 'getSessionStatus'])->middleware(['auth:api','role:employee']);
+    Route::get('session-status', [AuthController::class, 'getSessionStatus'])->middleware(['auth:api','role:employee,ChefProjet,RH']);
 });
 //departements
 Route::group(['prefix' => 'departements'], function () {
@@ -59,12 +59,12 @@ Route::group(['prefix' => 'stat'],  function () {
     ->middleware(['auth:api','role:admin,RH']);
 });
 Route::group(['prefix' => 'taches'],  function () {
-    Route::post('get_taches', [TacheController::class, 'index'])->middleware('role:admin,employee:chef');
-    Route::get('get_tache/{id}', [TacheController::class, 'show'])->middleware('role:admin,employee:chef');
-    Route::post('add_tache', [TacheController::class, 'store'])->middleware('role:admin,employee:chef');
-    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware('role:admin,employee:chef');
-    Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware('role:admin,employee:chef');
-    Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:admin,employee:chef');
+    Route::get('get_taches', [TacheController::class, 'index'])->middleware('role:ChefProjet,employee');
+    Route::get('get_tache/{id}', [TacheController::class, 'show'])->middleware('role:ChefProjet');
+    Route::post('add_tache', [TacheController::class, 'store'])->middleware('role:ChefProjet');
+    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware('role:ChefProjet,employee');
+    Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware('role:ChefProjet');
+    Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:ChefProjet');
 });
 
 

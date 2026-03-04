@@ -89,7 +89,6 @@ class DepartementController extends Controller
         $query = $request->search;
 
         $departements = departements::where('NomDepartement', 'like', "%$query%")
-            // ->orWhere('Description', 'like', "%$query%")
             ->get();
 
         return response()->json($departements);

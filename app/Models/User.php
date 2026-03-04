@@ -17,22 +17,28 @@ class User extends Authenticatable implements JWTSubject
     use HasApiTokens, HasFactory, Notifiable;
 
   protected $fillable = [
-
         'nom',
         'prenom',
         'email',
+        'verif_email',
         'password',
         'photo',
-        'nationalite',
-        'code',
         'role',
-        'salaire',
+        'code',
+        'connecte',
+        'session_ouverte',
+        'session_fermee',
         'prix_heure',
+        'salaire',
         'nb_heure_par_jour',
-        'nb_jour_connecte',
         'nb_jour_conge',
-        "departement_id"
-
+        'Contrat',
+        'status',
+        'date_naissance',
+        'departement_id',
+        'jours_absence',
+        'jours_presence',
+        'derniere_presence'
     ];
 
     protected $hidden = [
