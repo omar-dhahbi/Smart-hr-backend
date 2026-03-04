@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('photo')->nullable();
             $table->string('role')->default('employee');
             $table->string('code')->nullable();
-             $table->string('grade')->nullable();
+            //  $table->string('grade')->nullable();
             $table->boolean('connecte')->default(false);
             $table->timestamp('session_ouverte')->nullable();
             $table->timestamp('session_fermee')->nullable();

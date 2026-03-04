@@ -13,8 +13,8 @@ class Kernel extends ConsoleKernel
      protected function schedule(Schedule $schedule)
     {
         $schedule->call(function () {
-            app(AuthController::class)->Absence();
-        })->dailyAt('23:59');
+            app(AuthController::class)->fermerSession();
+        })->dailyAt('17:00');
     }
     protected function commands(): void
     {

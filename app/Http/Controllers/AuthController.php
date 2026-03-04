@@ -62,7 +62,7 @@ class AuthController extends Controller
         $user->departement_id = $request->departement_id;
 
 
-        $user->grade = $request->grade;
+        // $user->grade = $request->grade;
         $user->save();
         $details = [
             'title' => 'Vérification de votre compte',
@@ -250,31 +250,22 @@ class AuthController extends Controller
         $user->save();
         return response()->json(['user' => $user], 200);
     }
-  public function ouvrirSession()
-{
+    public function ouvrirSession(){
     $user = auth()->user();
-
-if ($user->role !== 'employee' && $user->role !== 'RH') {
-        return response()->json(['error' => 'user non utiliser'], 403);
+    if ($user->role !== 'employee' && $user->role !== 'RH'  && $user->role !== 'ChefProjet') {
+            return response()->json(['error' => 'user non utiliser'], 403);
     }
-
     if ($user->session_ouverte && !$user->session_fermee) {
         return response()->json(['error' => 'Session déjà ouverte'], 400);
     }
-
     $user->session_ouverte = now();
     $user->session_fermee = null;
     $user->save();
-
     return response()->json([
         'message' => 'Session ouverte avec succès',
         'heure_debut' => $user->session_ouverte
     ]);
 }
-
-
-
-
 public function fermerSession()
 {
     $user = auth()->user();
@@ -289,7 +280,7 @@ public function fermerSession()
 
     $user->session_fermee = now();
 
-    // 🔹 Calcul heures travaillées
+    // ✅ Calcul des heures travaillées
     $heures = Carbon::parse($user->session_ouverte)
         ->diffInMinutes($user->session_fermee) / 60;
 
@@ -297,24 +288,10 @@ public function fermerSession()
 
     $user->nb_heure_par_jour = $heures;
 
-    // 🔹 Salaire normal (max 8h)
-    if ($heures <= 8) {
-        $salaireJour = $heures * $user->prix_heure;
-    } else {
+    // ✅ Calcul simple du salaire (sans heures supplémentaires)
+    $salaireJour = $user->prix_heure * $heures;
 
-        // 🔹 8h normales
-        $salaireNormal = 8 * $user->prix_heure;
-
-        // 🔹 Heures supplémentaires
-        $heuresSupp = $heures - 8;
-
-        // 🔹 Bonus heure sup = prix_heure normal
-        $salaireSupp = $heuresSupp * $user->prix_heure;
-
-        $salaireJour = $salaireNormal + $salaireSupp;
-    }
-
-    // 🔹 Ajouter au salaire total
+    // ✅ Ajouter au salaire total
     $user->salaire += $salaireJour;
 
     $user->jours_presence += 1;
@@ -329,6 +306,7 @@ public function fermerSession()
         'salaire_total' => $user->salaire
     ]);
 }
+
 
 public function Absence()
 {
@@ -390,7 +368,7 @@ public function absenceEmployee($id)
     }
     public function index()
     {
-        $employees = User::where('role', 'employee')->get();
+    $employees = User::whereIn('role', ['employee', 'ChefProjet'])->get();
         return response()->json($employees);
     }
       public function getData()
