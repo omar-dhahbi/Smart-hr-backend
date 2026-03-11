@@ -25,7 +25,6 @@ class TacheController extends Controller
             'Description' => 'required|string',
             'DateDebut' => 'required|date',
             'DateFin' => 'required|date|after:DateDebut',
-            'status' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -40,7 +39,7 @@ class TacheController extends Controller
         $tache->Description = $request->Description;
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
-        $tache->status = $request->status ?? false;
+        $tache->status = $request->status;
 
         $tache->save();
 
@@ -68,7 +67,6 @@ class TacheController extends Controller
             'Description' => 'required|string',
             'DateDebut' => 'required|date',
             'DateFin' => 'required|date|after:DateDebut',
-            'status' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -86,7 +84,7 @@ class TacheController extends Controller
         $tache->Description = $request->Description;
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
-        $tache->status = $request->status ?? $tache->status;
+        $tache->status = $request->status;
 
         $tache->save();
         return response()->json($tache);
