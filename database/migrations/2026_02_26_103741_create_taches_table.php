@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('DateFin');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
-            $table->boolean('status')->default(false);
+            $table->string('status')->default('incomplet');
             $table->timestamps();
         });
     }
