@@ -246,19 +246,27 @@ class AuthController extends Controller
         $file->move(public_path('/images'), $filename);
         $user->photo = "/images/" . $filename;
     }
-
         $user->save();
         return response()->json(['user' => $user], 200);
     }
     public function ouvrirSession(){
     $user = auth()->user();
     if ($user->role !== 'employee' && $user->role !== 'RH'  && $user->role !== 'ChefProjet') {
-            return response()->json(['error' => 'user non utiliser'], 403);
+        return response()->json(['error' => 'user non utiliser'], 403);
     }
     if ($user->session_ouverte && !$user->session_fermee) {
         return response()->json(['error' => 'Session déjà ouverte'], 400);
     }
-    $user->session_ouverte = now();
+    $now = Carbon::now();
+
+    $heureDebut = Carbon::today()->setTime(8, 0, 0);
+    $heureTolerance = Carbon::today()->setTime(8, 15, 0);
+
+   if ($now->lessThanOrEqualTo($heureTolerance)) {
+        $user->session_ouverte = $heureDebut;
+    } else {
+        $user->session_ouverte = $now;
+    }
     $user->session_fermee = null;
     $user->save();
     return response()->json([
@@ -278,53 +286,97 @@ public function fermerSession()
         return response()->json(['error' => 'Session déjà fermée'], 400);
     }
 
-    $user->session_fermee = now();
+    $user->session_fermee = Carbon::now();
 
-    // ✅ Calcul des heures travaillées
-    $heures = Carbon::parse($user->session_ouverte)
-        ->diffInMinutes($user->session_fermee) / 60;
+    $debut = Carbon::parse($user->session_ouverte);
+    $fin = Carbon::parse($user->session_fermee);
 
-    $heures = round($heures, 2);
+    $minutesTravail = $debut->diffInMinutes($fin);
+    $debutPause = Carbon::today()->setTime(12,0,0);
+    $finPause = Carbon::today()->setTime(13,0,0);
+
+    if ($debut < $finPause && $fin > $debutPause) {
+
+        $pauseDebut = $debut->copy()->max($debutPause);
+        $pauseFin = $fin->copy()->min($finPause);
+
+        $minutesPause = $pauseDebut->diffInMinutes($pauseFin);
+
+        $minutesTravail -= $minutesPause;
+    }
+    $heures = round($minutesTravail / 60,2);
 
     $user->nb_heure_par_jour = $heures;
 
-    // ✅ Calcul simple du salaire (sans heures supplémentaires)
-    $salaireJour = $user->prix_heure * $heures;
+    $gainJour = $user->prix_heure * $heures;
 
-    // ✅ Ajouter au salaire total
-    $user->salaire += $salaireJour;
-
+    $user->salaire += $gainJour;
     $user->jours_presence += 1;
     $user->derniere_presence = now()->toDateString();
 
     $user->save();
 
     return response()->json([
-        'message' => 'Session fermée avec succès',
+        'message' => 'Session fermée',
         'heures_travaillees' => $heures,
-        'gain_du_jour' => $salaireJour,
+        'gain_du_jour' => $gainJour,
         'salaire_total' => $user->salaire
+    ]);
+}
+public function pauseDejeuner()
+{
+    $now = Carbon::now();
+
+    $debutPause = Carbon::today()->setTime(12,0,0);
+    $finPause = Carbon::today()->setTime(13,0,0);
+
+    if ($now->between($debutPause, $finPause)) {
+        return response()->json([
+            'message' => 'Pause déjeuner en cours'
+        ]);
+    }
+    return response()->json([
+        'message' => 'Temps de travail'
     ]);
 }
 
 
 public function Absence()
 {
+    $now = now();
     $today = now()->toDateString();
-    $employees = User::where('role', 'employee')->get();
+    $limit = now()->setTime(10,0,0);
+
+    if ($now->lessThan($limit)) {
+        return response()->json([
+            'message' => 'Il est encore trop tôt pour déclarer les absences'
+        ]);
+    }
+    $employees = User::whereIn('role', ['employee','RH','ChefProjet'])->get();
     foreach ($employees as $emp) {
-        if ($emp->derniere_presence != $today) {
+
+        // si l'utilisateur n'a pas pointé aujourd'hui
+        if ($emp->derniere_presence != $today && !$emp->session_ouverte) {
+
             $emp->jours_absence += 1;
+
             $penalite = $emp->prix_heure * 8;
+
             $emp->salaire -= $penalite;
+
             if ($emp->salaire < 0) {
                 $emp->salaire = 0;
             }
+
             $emp->save();
         }
     }
-    return response()->json(['message' => 'Absences vérifiées']);
+
+    return response()->json([
+        'message' => 'Absences déclarées avec succès'
+    ]);
 }
+
     public function resetSalaireMensuel()
     {
         User::where('role', 'employee')->update([
@@ -332,7 +384,6 @@ public function Absence()
             'jours_absence' => 0,
             'jours_presence' => 0
         ]);
-
         return response()->json(['message' => 'Reset mensuel effectué']);
     }
 
@@ -373,7 +424,7 @@ public function absenceEmployee($id)
     }
       public function getData()
     {
-        $users = User::whereIn('role', ['employee', 'RH'])->get();
+        $users = User::whereIn('role', ['employee', 'RH','ChefProjet'])->get();
         return response()->json($users);
     }
     public function  statUser(){

@@ -25,6 +25,8 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::get('getData', [AuthController::class, 'getData'])->middleware(['auth:api','role:admin']);
     Route::post('/ouvrir-session', [AuthController::class, 'ouvrirSession'])->middleware(['auth:api','role:employee,RH,ChefProjet']);
     Route::post('/fermer-session', [AuthController::class, 'fermerSession'])->middleware(['auth:api','role:employee,RH,ChefProjet']);
+    Route::get('/pause-dejeuner', [AuthController::class, 'pauseDejeuner'])->middleware(['auth:api','role:employee,RH,ChefProjet']);
+
     Route::get('statUser', [AuthController::class, 'statUser'])->middleware(['auth:api','role:admin,RH']);
     Route::put('activeAccount/{id}', [AuthController::class, 'activeAccount'])->middleware(['auth:api', 'role:admin,RH']);
     Route::put('AccounNotActive/{id}', [AuthController::class, 'AccounNotActive'])->middleware(['auth:api', 'role:admin,RH']);
