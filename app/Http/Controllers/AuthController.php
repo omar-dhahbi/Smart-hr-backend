@@ -470,5 +470,16 @@ public function absenceEmployee($id)
     ]);
 }
 
+public function searchUsers(Request $request)
+{
+    $query = $request->input('search');
+
+    $users = User::where('role', 'like', "%$query%")
+        ->orWhere('email', 'like', "%$query%")
+        ->orWhere('nom', 'like', "%$query%")
+        ->orWhere('prenom', 'like', "%$query%")
+        ->get();
+    return response()->json($users);
+}
 
 }
