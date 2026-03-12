@@ -291,7 +291,16 @@ public function fermerSession()
     $debut = Carbon::parse($user->session_ouverte);
     $fin = Carbon::parse($user->session_fermee);
 
+    // heure maximale de travail
+    $heureMax = Carbon::today()->setTime(17,0,0);
+
+    // si l'utilisateur ferme après 17:00 on bloque à 17:00
+    if ($fin->greaterThan($heureMax)) {
+        $fin = $heureMax;
+    }
+
     $minutesTravail = $debut->diffInMinutes($fin);
+
     $debutPause = Carbon::today()->setTime(12,0,0);
     $finPause = Carbon::today()->setTime(13,0,0);
 
@@ -304,6 +313,7 @@ public function fermerSession()
 
         $minutesTravail -= $minutesPause;
     }
+
     $heures = round($minutesTravail / 60,2);
 
     $user->nb_heure_par_jour = $heures;
@@ -323,6 +333,7 @@ public function fermerSession()
         'salaire_total' => $user->salaire
     ]);
 }
+
 public function pauseDejeuner()
 {
     $now = Carbon::now();
