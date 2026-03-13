@@ -346,6 +346,13 @@ public function pauseDejeuner()
             'message' => 'Pause déjeuner en cours'
         ]);
     }
+     if ($now->greaterThanOrEqualTo($endLunch)) {
+        return response()->json([
+            'lunch' => false,
+            'after_lunch' => true
+        ]);
+    }
+
     return response()->json([
         'message' => 'Temps de travail'
     ]);
