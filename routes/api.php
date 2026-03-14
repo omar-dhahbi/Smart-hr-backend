@@ -36,7 +36,7 @@ Route::group(['prefix' => 'auth'],  function () {
 });
 //departements
 Route::group(['prefix' => 'departements'], function () {
-    Route::get('get_departements', [DepartementController::class, 'index'])->middleware(['auth:api', 'role:admin,RH']);
+    Route::get('get_departements', [DepartementController::class, 'index'])->middleware(['auth:api', 'role:admin,RH,ChefProjet']);
     Route::get('get_departements/{id}', [DepartementController::class, 'getdepartementsById'])->middleware(['auth:api', 'role:admin']);
     Route::post('add_departement', [DepartementController::class, 'store'])->middleware(['auth:api', 'role:admin']);
     Route::put('update_departement/{id}', [DepartementController::class, 'update'])->middleware(['auth:api', 'role:admin']);
@@ -69,6 +69,7 @@ Route::group(['prefix' => 'taches'],  function () {
     Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware('role:ChefProjet,employee');
     Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware('role:ChefProjet');
     Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:ChefProjet');
+    Route::get('/employees/{id}', [TacheController::class, 'getEmployeesByDepartement'])->middleware(['auth:api','role:ChefProjet']);
 });
 
 
