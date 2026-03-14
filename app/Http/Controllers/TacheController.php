@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\tache;
 use Illuminate\Support\Facades\Validator;
@@ -25,6 +25,7 @@ class TacheController extends Controller
             'Description' => 'required|string',
             'DateDebut' => 'required|date',
             'DateFin' => 'required|date|after:DateDebut',
+            'departement_id' => 'required|exists:departements,id',
         ]);
 
         if ($validator->fails()) {
@@ -40,6 +41,8 @@ class TacheController extends Controller
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
         $tache->status = $request->status;
+        $tache->departement_id = $request->departement_id;
+
 
         $tache->save();
 
@@ -67,12 +70,16 @@ class TacheController extends Controller
             'Description' => 'required|string',
             'DateDebut' => 'required|date',
             'DateFin' => 'required|date|after:DateDebut',
+              'departement_id' => [
+                'required',
+                Rule::exists('departements', 'id'),
+            ],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'error' => $validator->errors()
-            ], 404);
+            ], 422);
         } $tache = tache::find($id);
 
         if (is_null($tache)) {
@@ -85,6 +92,8 @@ class TacheController extends Controller
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
         $tache->status = $request->status;
+        $tache->departement_id = $request->departement_id;
+
 
         $tache->save();
         return response()->json($tache);
@@ -101,6 +110,18 @@ class TacheController extends Controller
 
         return response()->json($taches);
     }
+     public function getEmployeeBydepartement($departement_id){
 
+        $employees = User::where('departement_id', $departement_id)->where('role', 'employee')->get();
+        if ($employees->isEmpty()) {
+                return response()->json([
+                    'message' => 'Aucun employé trouvé dans ce département'
+                ], 404);
+            }
+            return response()->json([
+                'departement_id' => $departement_id,
+                'employees' => $employees
+            ], 200);
+}
 
 }
