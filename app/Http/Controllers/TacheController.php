@@ -1,136 +1,213 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\User;
+
 use Illuminate\Http\Request;
-use App\Models\tache;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use App\Models\tache;
+use App\Models\departementTacheUser;
+
 class TacheController extends Controller
 {
-     public function index()
+
+    public function store(Request $request)
     {
-        $tache = DB::table('taches')
-                ->join('users', 'users.id', '=', 'taches.user_id')
-                ->select('taches.*', 'users.nom', 'users.prenom')
-                ->get();
-        return response()->json($tache);
-    }
-     public function store(Request $request)
-    {
+
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'Nom' => 'required|string',
-            'Description' => 'required|string',
+            'Nom' => 'required',
+            'Description' => 'required|min:10',
             'DateDebut' => 'required|date',
-            'DateFin' => 'required|date|after:DateDebut',
-            'departement_id' => 'required|exists:departements,id',
+            'DateFin' => 'required|date',
+            'departement_id' => 'required|array',
+            'user_id' => 'required|array',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'error' => $validator->errors()
-            ], 404);
+            ], 401);
         }
 
         $tache = new tache();
-        $tache->user_id = $request->user_id;
+
         $tache->Nom = $request->Nom;
         $tache->Description = $request->Description;
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
-        $tache->status = $request->status;
-        $tache->departement_id = $request->departement_id;
-
+        $tache->status = $request->status ?? 'incomplet';
 
         $tache->save();
 
-        return response()->json(['message' => 'Tache ajouter avec succes'], 200);
+
+        foreach ($request->departement_id as $dep) {
+
+            foreach ($request->user_id as $user) {
+
+                $pivot = new departementTacheUser();
+
+                $pivot->departement_id = $dep;
+                $pivot->tache_id = $tache->id;
+                $pivot->user_id = $user;
+
+                $pivot->save();
+            }
+        }
+
+        return response()->json([
+            'message' => 'Tache created successfully'
+        ]);
     }
-     public function show($id)
+
+
+    public function update(Request $request, $id)
     {
+
         $tache = tache::find($id);
 
-        if (is_null($tache)) {
-            return response()->json(['error' => 'Tache Non trouvé.'], 404);
+        if (!$tache) {
+            return response()->json(['message' => 'Tache not found'], 404);
         }
 
-        return response()->json($tache);
-    }
-
-     public function update(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => [
-                'required',
-                Rule::exists('users', 'id'),
-            ],
-            'Nom' => 'required|string',
-            'Description' => 'required|string',
-            'DateDebut' => 'required|date',
-            'DateFin' => 'required|date|after:DateDebut',
-              'departement_id' => [
-                'required',
-                Rule::exists('departements', 'id'),
-            ],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error' => $validator->errors()
-            ], 422);
-        } $tache = tache::find($id);
-
-        if (is_null($tache)) {
-            return response()->json(['error' => 'Tache non trouvé.'], 404);
-        }
-
-        $tache->user_id = $request->user_id;
         $tache->Nom = $request->Nom;
         $tache->Description = $request->Description;
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
         $tache->status = $request->status;
-        $tache->departement_id = $request->departement_id;
-
 
         $tache->save();
-        return response()->json($tache);
-    }
-     public function search(Request $request)
-    {
-        $query = $request->input('search');
 
-        $taches = tache::where('Nom', 'like', "%$query%")
-            ->orWhere('Description', 'like', "%$query%")
-            ->orWhere('DateDebut', 'like', "%$query%")
-            ->orWhere('DateFin', 'like', "%$query%")
+
+        DB::table('departement_tache_users')
+            ->where('tache_id', $id)
+            ->delete();
+
+
+        foreach ($request->departement_id as $dep) {
+
+            foreach ($request->user_id as $user) {
+
+                departementTacheUser::create([
+                    'departement_id' => $dep,
+                    'tache_id' => $id,
+                    'user_id' => $user
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Tache updated successfully'
+        ]);
+    }
+
+
+    public function getDataById($id)
+    {
+
+        $data = DB::table('taches')
+
+            ->join('departement_tache_users', 'taches.id', '=', 'departement_tache_users.tache_id')
+
+            ->join('departements', 'departements.id', '=', 'departement_tache_users.departement_id')
+
+            ->join('users', 'users.id', '=', 'departement_tache_users.user_id')
+
+            ->select(
+                'taches.id',
+                'taches.Nom',
+                'taches.Description',
+                'taches.DateDebut',
+                'taches.DateFin',
+                'taches.status',
+                'departements.NomDepartement',
+                'users.nom',
+                'users.prenom'
+            )
+
+            ->where('taches.id', $id)
+
             ->get();
 
-        return response()->json($taches);
+        return response()->json($data);
     }
-     public function getEmployeeBydepartement($departement_id){
 
-        $employees = User::where('departement_id', $departement_id)->where('role', 'employee')->get();
-        if ($employees->isEmpty()) {
-                return response()->json([
-                    'message' => 'Aucun employé trouvé dans ce département'
-                ], 404);
-            }
-            return response()->json([
-                'departement_id' => $departement_id,
-                'employees' => $employees
-            ], 200);
-}
- public function getTacheByUserId($user_id)
+
+    public function destroy($id)
     {
-        $tache = tache::where('user_id', $user_id)->get();
-        if (is_null($tache)) {
-            return response()->json(['error' => "Utilisateur n'est pas utulisé"], 404);
-        } else {
-            return response()->json(["tache"=>$tache], 200);
+
+        $tache = tache::find($id);
+
+        if (!$tache) {
+            return response()->json(['message' => 'Tache not found'], 404);
         }
+
+        DB::table('departement_tache_users')
+            ->where('tache_id', $id)
+            ->delete();
+
+        $tache->delete();
+
+        return response()->json([
+            'message' => 'Tache deleted successfully'
+        ]);
     }
 
+    public function index()
+    {
+
+        $taches = DB::table('taches')
+            ->join('departement_tache_users', 'taches.id', '=', 'departement_tache_users.tache_id')
+            ->join('departements', 'departements.id', '=', 'departement_tache_users.departement_id')
+            ->join('users', 'users.id', '=', 'departement_tache_users.user_id')
+
+            ->select(
+                'taches.id',
+                'taches.Nom',
+                'taches.Description',
+                'taches.DateDebut',
+                'taches.DateFin',
+                'taches.status',
+                'departements.NomDepartement',
+                'users.nom',
+                'users.prenom'
+            )
+            ->orderBy('taches.id')
+
+            ->get();
+
+
+        $result = [];
+        $currentTache = null;
+
+        foreach ($taches as $tache) {
+
+            if ($currentTache === null || $currentTache['id'] !== $tache->id) {
+
+                if ($currentTache !== null) {
+                    $result[] = $currentTache;
+                }
+
+                $currentTache = [
+                    "id" => $tache->id,
+                    "Nom" => $tache->Nom,
+                    "Description" => $tache->Description,
+                    "DateDebut" => $tache->DateDebut,
+                    "DateFin" => $tache->DateFin,
+                    "status" => $tache->status,
+                    "departements" => [$tache->NomDepartement],
+                    "users" => [$tache->nom . ' ' . $tache->prenom],
+                ];
+            } else {
+
+                $currentTache["departements"][] = $tache->NomDepartement;
+                $currentTache["users"][] = $tache->nom . ' ' . $tache->prenom;
+            }
+        }
+
+        if ($currentTache !== null) {
+            $result[] = $currentTache;
+        }
+
+        return $result;
+    }
 }

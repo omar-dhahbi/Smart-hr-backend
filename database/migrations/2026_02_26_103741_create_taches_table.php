@@ -17,11 +17,10 @@ return new class extends Migration
             $table->text('Description');
             $table->date('DateDebut');
             $table->date('DateFin');
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            // $table->unsignedBigInteger('user_id');
+            // $table->foreign('user_id')->references('id')->on('users');
             $table->string('status')->default('incomplet');
-            $table->unsignedBigInteger('departement_id');
-            $table->foreign('departement_id')->references('id')->on('departements');
+
             $table->timestamps();
 
         });
