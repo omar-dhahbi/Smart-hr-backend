@@ -128,7 +128,7 @@ class TacheController extends Controller
         $tache = tache::where('user_id', $user_id)->get();
         if (is_null($tache)) {
             return response()->json(['error' => "Utilisateur n'est pas utulisé"], 404);
-        } else {
+        } else{
             return response()->json(["tache"=>$tache], 200);
         }
     }
