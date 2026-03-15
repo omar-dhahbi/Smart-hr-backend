@@ -9,12 +9,12 @@ class tache extends Model
 {
     use HasFactory;
     protected $table = "taches";
-    protected $fillable = ['Nom', 'Description', 'DateDebut', 'DateFin', 'user_id', 'status'];
+    protected $fillable = ['Nom', 'Description', 'DateDebut', 'DateFin', 'user_id', 'status','departement_id'];
     protected $hidden = ['created_at', 'updated_at'];
      public function user()
     {
         return $this->belongsTo(User::class);
-    } 
+    }
 }
 
 

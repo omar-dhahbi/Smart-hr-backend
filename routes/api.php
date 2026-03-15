@@ -68,6 +68,8 @@ Route::group(['prefix' => 'taches'],  function () {
     Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware('role:ChefProjet');
     Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:ChefProjet');
     Route::get('/employees/{id}', [TacheController::class, 'getEmployeesByDepartement'])->middleware(['auth:api','role:ChefProjet']);
+    Route::get('getTacheByUserId/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api','role:employee']);
+
 });
 
 
