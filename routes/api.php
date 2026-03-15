@@ -62,13 +62,14 @@ Route::group(['prefix' => 'stat'],  function () {
 });
 Route::group(['prefix' => 'taches'],  function () {
     Route::get('get_taches', [TacheController::class, 'index'])->middleware('role:ChefProjet,employee');
-    Route::get('get_tache/{id}', [TacheController::class, 'show'])->middleware('role:ChefProjet');
+    Route::get('get_tache/{id}', [TacheController::class, 'getDataById'])->middleware('role:ChefProjet');
     Route::post('add_tache', [TacheController::class, 'store'])->middleware('role:ChefProjet');
     Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware('role:ChefProjet,employee');
     Route::delete('delete_tache/{id}', [TacheController::class, 'destroy'])->middleware('role:ChefProjet');
     Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:ChefProjet');
-    Route::get('/employees/{id}', [TacheController::class, 'getEmployeesByDepartement'])->middleware(['auth:api','role:ChefProjet']);
-    Route::get('getTacheByUserId/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api','role:employee']);
+    Route::get('/employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
+->middleware(['auth:api','role:ChefProjet']);
+   Route::get('getTacheByUserId/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api','role:employee']);
 
 });
 

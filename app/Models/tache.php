@@ -9,7 +9,7 @@ class tache extends Model
 {
     use HasFactory;
     protected $table = "taches";
-    protected $fillable = ['Nom', 'Description', 'DateDebut', 'DateFin', 'user_id', 'status','departement_id'];
+    protected $fillable = ['Nom', 'Description', 'DateDebut', 'DateFin', 'status'];
     protected $hidden = ['created_at', 'updated_at'];
      public function user()
     {
