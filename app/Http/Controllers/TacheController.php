@@ -123,5 +123,14 @@ class TacheController extends Controller
                 'employees' => $employees
             ], 200);
 }
+ public function getTacheByUserId($user_id)
+    {
+        $tache = tache::where('user_id', $user_id)->get();
+        if (is_null($tache)) {
+            return response()->json(['error' => "Utilisateur n'est pas utulisé"], 404);
+        } else {
+            return response()->json(["tache"=>$tache], 200);
+        }
+    }
 
 }
