@@ -108,7 +108,7 @@ class AuthController extends Controller
             'user' => $user,
             'token' => $token,
             'type' => 'bearer',
-            'expired' => null, // token infini, pas d'expiration
+            'expired' => auth()->factory()->getTTL() * 60,
             'role' => auth()->user()->role,
             // 'first_login' => $user->first_login
         ]);
