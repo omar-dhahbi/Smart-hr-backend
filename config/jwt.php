@@ -28,11 +28,10 @@ return [
 
 
 
-    'ttl' => 1440,
+    'ttl' => 2880,
 
+    'refresh_ttl' => 2880,
 
-
-'refresh_ttl' => 1440,
 
 
 
