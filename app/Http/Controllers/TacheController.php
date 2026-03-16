@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\tache;
+use App\Models\User;
 use App\Models\departementTacheUser;
 
 class TacheController extends Controller
@@ -210,4 +211,19 @@ class TacheController extends Controller
 
         return $result;
     }
+
+   public function getEmployeeBydepartement($departement_id){
+
+        $employees = User::where('departement_id', $departement_id)->where('role', 'employee')->get();
+        if ($employees->isEmpty()) {
+                return response()->json([
+                    'message' => 'Aucun employé trouvé dans ce département'
+                ], 404);
+            }
+            return response()->json([
+                'departement_id' => $departement_id,
+                'employees' => $employees
+            ], 200);
+}
+
 }
