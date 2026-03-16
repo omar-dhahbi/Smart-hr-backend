@@ -71,7 +71,6 @@ Route::group(['prefix' => 'taches'],  function () {
     Route::get('searchTache/search', [TacheController::class, 'search'])->middleware('role:ChefProjet');
     Route::get('/employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
 ->middleware(['auth:api','role:ChefProjet']);
-   Route::get('getTacheByUserId/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api','role:employee']);
 
 });
 
