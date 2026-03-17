@@ -30,6 +30,8 @@ Route::group(['prefix' => 'auth'],  function () {
     Route::put('activeAccount/{id}', [AuthController::class, 'activeAccount'])->middleware(['auth:api', 'role:admin,RH']);
     Route::put('AccounNotActive/{id}', [AuthController::class, 'AccounNotActive'])->middleware(['auth:api', 'role:admin,RH']);
     Route::get('session-status', [AuthController::class, 'getSessionStatus'])->middleware(['auth:api','role:employee,ChefProjet,RH']);
+    Route::get('searchUsers/search', [RhController::class, 'searchUsers'])->middleware(['auth:api','role:RH,admin']);
+
 });
 //departements
 Route::group(['prefix' => 'departements'], function () {

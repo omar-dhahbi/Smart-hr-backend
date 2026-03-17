@@ -362,51 +362,6 @@ public function pauseDejeuner()
 }
 
 
-// public function Absence()
-// {
-//     $now = now();
-//     $today = now()->toDateString();
-//     $limit = now()->setTime(10,0,0);
-
-//     if ($now->lessThan($limit)) {
-//         return response()->json([
-//             'message' => 'Il est encore trop tôt pour déclarer les absences'
-//         ]);
-//     }
-//     $employees = User::whereIn('role', ['employee','RH','ChefProjet'])->get();
-//     foreach ($employees as $emp) {
-
-//         // si l'utilisateur n'a pas pointé aujourd'hui
-//         if ($emp->derniere_presence != $today && !$emp->session_ouverte) {
-
-//             $emp->jours_absence += 1;
-
-//             $penalite = $emp->prix_heure * 8;
-
-//             $emp->salaire -= $penalite;
-
-//             if ($emp->salaire < 0) {
-//                 $emp->salaire = 0;
-//             }
-
-//             $emp->save();
-//         }
-//     }
-
-//     return response()->json([
-//         'message' => 'Absences déclarées avec succès'
-//     ]);
-// }
-
-    // public function resetSalaireMensuel()
-    // {
-    //     User::where('role', 'employee')->update([
-    //         'salaire' => 0,
-    //         'jours_absence' => 0,
-    //         'jours_presence' => 0
-    //     ]);
-    //     return response()->json(['message' => 'Reset mensuel effectué']);
-    // }
 
 public function absenceEmployee($id)
 {
