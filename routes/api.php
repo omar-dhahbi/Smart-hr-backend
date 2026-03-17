@@ -88,7 +88,7 @@ Route::group(['prefix' => 'stat'], function () {
     Route::get('employees-absent-list-admin', [StatistiqueController::class, 'EmployeesAbsentTodayListAdmin'])
         ->middleware(['auth:api','role:admin']);
 
-    // 🔹 Top présence
+  
     Route::get('top-present-rh', [StatistiqueController::class, 'EmployeePlusPresentRH'])
         ->middleware(['auth:api','role:RH']);
 
