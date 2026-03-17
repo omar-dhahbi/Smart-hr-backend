@@ -9,15 +9,22 @@ use App\Models\departements;
 
 class StatistiqueController extends Controller
 {
-    public function EmployeePlusAbsent()
-    {
-        $user = User::where('role','employee')
-            ->orderByDesc('jours_absence')
+    // public function EmployeePlusAbsent()
+    // {
+    //     $user = User::where('role','employee')
+    //         ->orderByDesc('jours_absence')
+    //         ->first();
+    //     return response()->json($user);
+    // }
+    public function EmployeePlusPresentRH(){
+        $user =  User::whereIn('role', ['employee', 'ChefProjet'])
+            ->orderByDesc('jours_presence')
             ->first();
+
         return response()->json($user);
     }
-    public function EmployeePlusPresent(){
-        $user = User::where('role','employee')
+     public function EmployeePlusPresentAdmin(){
+        $user = User::whereIn('role', ['employee', 'RH', 'ChefProjet'])
             ->orderByDesc('jours_presence')
             ->first();
 
@@ -27,46 +34,81 @@ class StatistiqueController extends Controller
         $count = departements::count();
         return response()->json(['total_departements' => $count]);
     }
-    public function CountEmployee(){
-        $count = User::where('role', 'employee')->count();
+    public function CountEmployeeRH(){
+        $count = User::whereIn('role', ['employee', 'ChefProjet'])->count();
         return response()->json(['total_employees' => $count]);
     }
-public function EmployeesPresentToday()
+     public function CountEmployeeAdmin(){
+        $count = User::whereIn('role', ['employee', 'RH', 'ChefProjet'])->count();
+        return response()->json(['total_employees' => $count]);
+    }
+
+public function EmployeesPresentTodayRH()
 {
     $today = date('Y-m-d');
-    $present = User::where('role', 'employee')
+    $present = User::whereIn('role', ['employee', 'ChefProjet'])
         ->whereDate('derniere_presence', $today)
         ->count();
-    $total = User::where('role', 'employee')->count();
+    $total = User::whereIn('role', ['employee', 'ChefProjet'])->count();
+    return response()->json([
+        'present' => $present,
+        'total' => $total
+    ]);
+}
+public function EmployeesPresentTodayAdmin()
+{
+    $today = date('Y-m-d');
+    $present = User::whereIn('role', ['employee', 'RH', 'ChefProjet'])
+        ->whereDate('derniere_presence', $today)
+        ->count();
+    $total = User::whereIn('role', ['employee', 'RH', 'ChefProjet'])->count();
 
     return response()->json([
         'present' => $present,
         'total' => $total
     ]);
 }
-public function EmployeesAbsenceToday()
+public function EmployeesAbsenceTodayRH()
 {
     $today = date('Y-m-d');
-    $present = User::where('role', 'employee')
+    $present = User::whereIn('role', ['employee','ChefProjet'])
         ->whereDate('derniere_presence', $today)
         ->count();
-    $total = User::where('role', 'employee')->count();
+    $total = User::whereIn('role', ['employee','ChefProjet'])->count();
     return response()->json([
         'present' => $present,
         'total' => $total
     ]);
 }
-
-    public function EmployeesPresentList(){
+public function EmployeesAbsenceTodayAdmin()
+{
+    $today = date('Y-m-d');
+    $present =User::whereIn('role', ['employee', 'RH', 'ChefProjet'])
+        ->whereDate('derniere_presence', $today)
+        ->count();
+    $total =User::whereIn('role', ['employee', 'RH', 'ChefProjet'])->count();
+    return response()->json([
+        'present' => $present,
+        'total' => $total
+    ]);
+}
+    public function EmployeesPresentListRH(){
         $today = date('Y-m-d');
-        $users = User::where('role', 'employee')->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo',]);
+            $users = User::whereIn('role', ['employee', 'ChefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo',]);
 
         return response()->json($users);
     }
-    public function EmployeesAbsentTodayList() {
+
+    public function EmployeesPresentListAdmin(){
+        $today = date('Y-m-d');
+        $users =  $users = User::whereIn('role', ['employee', 'RH', 'ChefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo',]);
+
+        return response()->json($users);
+    }
+    public function EmployeesAbsentTodayListAdmin() {
     $today = date('Y-m-d');
 
-    $absents = User::where('role', 'employee')
+    $absents = User::whereIn('role', ['employee', 'ChefProjet', 'RH'])
         ->where(function($query) use ($today) {
             $query->whereNull('derniere_presence')
                   ->orWhereDate('derniere_presence', '!=', $today);
@@ -75,16 +117,28 @@ public function EmployeesAbsenceToday()
 
     return response()->json($absents);
 }
-    public function EmployeesAbsentToday()
+ public function EmployeesAbsentTodayListRH() {
+    $today = date('Y-m-d');
+
+    $absents = User::whereIn('role', ['employee', 'ChefProjet'])
+        ->where(function($query) use ($today) {
+            $query->whereNull('derniere_presence')
+                  ->orWhereDate('derniere_presence', '!=', $today);
+        })
+        ->get(['id', 'nom', 'prenom', 'photo']);
+
+    return response()->json($absents);
+}
+    public function EmployeesAbsentTodayRH()
 {
     $today = date('Y-m-d');
 
-    $absents = User::where('role', 'employee')
+    $absents = User::whereIn('role', ['employee', 'ChefProjet'])
         ->where(function($query) use ($today) {
             $query->whereNull('derniere_presence')
                   ->orWhereDate('derniere_presence', '!=', $today);})
         ->get(['id', 'nom', 'prenom', 'photo']);
-    $total = User::where('role', 'employee')->count();
+    $total = User::whereIn('role', ['employee', 'ChefProjet'])->count();
     $countAbsent = $absents->count();
     return response()->json([
         'absent' => $countAbsent,
@@ -92,101 +146,23 @@ public function EmployeesAbsenceToday()
         'employees' => $absents
     ]);
 }
-    // Employé le plus absent du mois dernier
-
- // Employé le plus absent du mois dernier
-// public function EmployeLePlusAbsentMoisDernier()
-// {
-//     // Obtenir le premier et dernier jour du mois dernier
-//     $debutMoisDernier = now()->subMonth()->startOfMonth()->toDateString();
-//     $finMoisDernier = now()->subMonth()->endOfMonth()->toDateString();
-
-//     // Récupérer tous les employés
-//     $employes = User::where('role', 'employee')->get();
-
-//     $employeLePlusAbsent = null;
-//     $maxAbsences = -1;
-
-//     foreach ($employes as $employe) {
-//         // Compter le nombre de jours du mois dernier où il n'a pas pointé
-//         $joursAbsence = 0;
-
-//         // Si derniere_presence est NULL ou hors du mois dernier, considérer absence
-//         $presence = $employe->derniere_presence;
-
-//         // On parcourt chaque jour du mois dernier
-//         $periode = \Carbon\CarbonPeriod::create($debutMoisDernier, $finMoisDernier);
-
-//         foreach ($periode as $jour) {
-//             $jourStr = $jour->toDateString();
-//             if ($presence !== $jourStr) {
-//                 $joursAbsence++;
-//             }
-//         }
-
-//         // Mettre à jour le champ jours_absence dans la base
-//         $employe->jours_absence = $joursAbsence;
-//         $employe->save();
-
-//         // Vérifier si c'est l'employé le plus absent
-//         if ($joursAbsence > $maxAbsences) {
-//             $maxAbsences = $joursAbsence;
-//             $employeLePlusAbsent = $employe;
-//         }
-//     }
-
-//     if ($employeLePlusAbsent) {
-//         return response()->json([
-//             'nom' => $employeLePlusAbsent->nom,
-//             'prenom' => $employeLePlusAbsent->prenom,
-//             'photo' => $employeLePlusAbsent->photo,
-//             'absences' => $maxAbsences
-//         ]);
-//     }
-
-//     return response()->json(['message' => 'Aucun employé trouvé']);
-// }
-
-
-// Employé le plus présent du mois dernier
-public function EmployeLePlusPresentMoisDernier()
+ public function EmployeesAbsentTodayAdmin()
 {
-    // Obtenir le premier et dernier jour du mois dernier
-    $debutMoisDernier = now()->subMonth()->startOfMonth()->toDateString();
-    $finMoisDernier = now()->subMonth()->endOfMonth()->toDateString();
+    $today = date('Y-m-d');
 
-    // Récupérer tous les employés
-    $employes = User::where('role', 'employee')->get();
-
-    $employeLePlusPresent = null;
-    $maxPresences = -1;
-
-    foreach ($employes as $employe) {
-        // Compter les présences pendant le mois dernier
-        $presences = User::where('id', $employe->id)
-            ->whereDate('derniere_presence', '>=', $debutMoisDernier)
-            ->whereDate('derniere_presence', '<=', $finMoisDernier)
-            ->count();
-
-        if ($presences > $maxPresences) {
-            $maxPresences = $presences;
-            $employeLePlusPresent = $employe;
-        }
-    }
-
-    if ($employeLePlusPresent) {
-        return response()->json([
-            'nom' => $employeLePlusPresent->nom,
-            'prenom' => $employeLePlusPresent->prenom,
-            'photo' => $employeLePlusPresent->photo,
-            'presences' => $maxPresences
-        ]);
-    }
-
-    return response()->json(['message' => 'Aucun employé trouvé']);
+    $absents =User::whereIn('role', ['employee', 'ChefProjet', 'RH'])
+        ->where(function($query) use ($today) {
+            $query->whereNull('derniere_presence')
+                  ->orWhereDate('derniere_presence', '!=', $today);})
+        ->get(['id', 'nom', 'prenom', 'photo']);
+    $total =User::whereIn('role', ['employee', 'ChefProjet', 'RH'])->count();
+    $countAbsent = $absents->count();
+    return response()->json([
+        'absent' => $countAbsent,
+        'total' => $total,
+        'employees' => $absents
+    ]);
 }
-
-
 
 
 

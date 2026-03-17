@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('departement_tache_users', function (Blueprint $table) {
             $table->id();
-             $table->unsignedBigInteger('departement_id');
+            $table->unsignedBigInteger('departement_id');
             $table->foreign('departement_id')->references('id')->on('departements');
             $table->unsignedBigInteger('tache_id');
             $table->foreign('tache_id')->references('id')->on('taches');
