@@ -249,8 +249,7 @@ class AuthController extends Controller
         $user->save();
         return response()->json(['user' => $user], 200);
     }
-    public function ouvrirSession()
-    {
+    public function ouvrirSession(){
     $user = auth()->user();
     if ($user->role !== 'employee' && $user->role !== 'RH'  && $user->role !== 'ChefProjet') {
         return response()->json(['error' => 'user non utiliser'], 403);
@@ -269,6 +268,15 @@ class AuthController extends Controller
         $user->session_ouverte = $now;
     }
     $user->session_fermee = null;
+      $user->session_fermee = null;
+
+    // 📅 Gestion présence (une seule fois par jour)
+    $today = now()->toDateString();
+
+    if ($user->derniere_presence !== $today) {
+        $user->jours_presence += 1;
+        $user->derniere_presence = $today;
+    }
     $user->save();
     return response()->json([
         'message' => 'Session ouverte avec succès',
@@ -330,7 +338,7 @@ public function fermerSession()
     $gainJour = $user->prix_heure * $heures;
 
     $user->salaire += $gainJour;
-    $user->jours_presence += 1;
+    // $user->jours_presence += 1;
     $user->derniere_presence = now()->toDateString();
 
     $user->save();
@@ -435,5 +443,16 @@ public function absenceEmployee($id)
     ]);
 }
 
+public function searchUser(Request $request)
+    {
+        $query = $request->input('search');
+
+        $users = User::where('nom', 'like', "%$query%")
+            ->orWhere('prenom', 'like', "%$query%")
+            ->orWhere('email', 'like', "%$query%")
+            ->orWhere('role', 'like', "%$query%")
+            ->get();
+        return response()->json($users);
+    }
 
 }

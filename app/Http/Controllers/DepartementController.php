@@ -27,7 +27,7 @@ class DepartementController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'NomDepartement' => 'required|unique:departements|min:3|string',
+            'NomDepartement' => 'required|unique:departements|min:2|string',
             // 'Description' => 'required|min:10',
         ]);
 

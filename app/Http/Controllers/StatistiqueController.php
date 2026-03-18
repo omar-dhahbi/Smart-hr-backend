@@ -125,8 +125,7 @@ public function EmployeesAbsenceTodayAdmin()
             $query->whereNull('derniere_presence')
                   ->orWhereDate('derniere_presence', '!=', $today);
         })
-        ->get(['id', 'nom', 'prenom', 'photo']);
-
+        ->get(['id', 'nom', 'prenom', 'photo']);    
     return response()->json($absents);
 }
     public function EmployeesAbsentTodayRH()
@@ -163,6 +162,77 @@ public function EmployeesAbsenceTodayAdmin()
         'employees' => $absents
     ]);
 }
+public function EmployeLePlusPresentMoisDernierAdmin()
+{
+    // Obtenir le premier et dernier jour du mois dernier
+    $debutMoisDernier = now()->subMonth()->startOfMonth()->toDateString();
+    $finMoisDernier = now()->subMonth()->endOfMonth()->toDateString();
+
+    // Récupérer tous les employés
+    $employes = User::whereIn('role', ['employee', 'ChefProjet', 'RH'])->get();
+
+    $employeLePlusPresent = null;
+    $maxPresences = -1;
+
+    foreach ($employes as $employe) {
+        // Compter les présences pendant le mois dernier
+        $presences = User::where('id', $employe->id)
+            ->whereDate('derniere_presence', '>=', $debutMoisDernier)
+            ->whereDate('derniere_presence', '<=', $finMoisDernier)
+            ->count();
+
+        if ($presences > $maxPresences) {
+            $maxPresences = $presences;
+            $employeLePlusPresent = $employe;
+        }
+    }
+    if ($employeLePlusPresent) {
+            return response()->json([
+                'nom' => $employeLePlusPresent->nom,
+                'prenom' => $employeLePlusPresent->prenom,
+                'photo' => $employeLePlusPresent->photo,
+                'presences' => $maxPresences
+            ]);
+        }
+
+        return response()->json(['message' => 'Aucun employé trouvé']);
+    }
+    public function EmployeLePlusPresentMoisDernierRH()
+{
+    // Obtenir le premier et dernier jour du mois dernier
+    $debutMoisDernier = now()->subMonth()->startOfMonth()->toDateString();
+    $finMoisDernier = now()->subMonth()->endOfMonth()->toDateString();
+
+    // Récupérer tous les employés
+    $employes =User:: whereIn('role', ['employee', 'ChefProjet'])->get();
+
+    $employeLePlusPresent = null;
+    $maxPresences = -1;
+
+    foreach ($employes as $employe) {
+        // Compter les présences pendant le mois dernier
+        $presences = User::where('id', $employe->id)
+            ->whereDate('derniere_presence', '>=', $debutMoisDernier)
+            ->whereDate('derniere_presence', '<=', $finMoisDernier)
+            ->count();
+
+        if ($presences > $maxPresences) {
+            $maxPresences = $presences;
+            $employeLePlusPresent = $employe;
+        }
+    }
+    if ($employeLePlusPresent) {
+            return response()->json([
+                'nom' => $employeLePlusPresent->nom,
+                'prenom' => $employeLePlusPresent->prenom,
+                'photo' => $employeLePlusPresent->photo,
+                'presences' => $maxPresences
+            ]);
+        }
+
+        return response()->json(['message' => 'Aucun employé trouvé']);
+    }
+
 
 
 
