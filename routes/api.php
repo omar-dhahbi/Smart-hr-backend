@@ -7,6 +7,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TacheController;
+use App\Http\Controllers\CongéController;
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -73,6 +75,10 @@ Route::group(['prefix' => 'taches'],  function () {
     // Route::get('searchTache/search', [TacheController::class, 'search']);
     Route::get('/employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
 ->middleware(['auth:api','role:ChefProjet']);
+});
+
+Route::group(['prefix' => 'congé'],  function () {
+    Route::post('add_congé', [CongéController::class, 'demandeConge']);
 });
 
 
