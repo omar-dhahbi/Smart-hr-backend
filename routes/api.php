@@ -79,6 +79,12 @@ Route::group(['prefix' => 'taches'],  function () {
 
 Route::group(['prefix' => 'congé'],  function () {
     Route::post('add_congé', [CongéController::class, 'demandeConge']);
+    Route::put('approve_congé/{id}', [CongéController::class, 'approveConge']);
+    Route::put('refuse_congé/{id}', [CongéController::class, 'refuseConge']);
+    Route::get('pending_congé', [CongéController::class, 'getCongeAttente']);
+    Route::get('approved_congé', [CongéController::class, 'getCongeApprove']);
+    Route::get('refused_congé', [CongéController::class, 'getCongeRefuse']);
+    Route::get('result_congé', [CongéController::class, 'getResultByUser']);
 });
 
 

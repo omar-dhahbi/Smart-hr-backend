@@ -65,4 +65,92 @@ class CongéController extends Controller
         }*/
         return response()->json(['message' => 'Demande de congé effectuée avec succès.'], 201);
     }
+
+     public function approveConge($id)
+{
+    $conge = congé::find($id);
+
+    if (!$conge) {
+        return response()->json(['error' => 'Congé non trouvé'], 404);
+    }
+
+    $conge->status = 'accepté';
+
+    if ($conge->type == "simple") {
+        $user = User::find($conge->user_id);
+
+        if (!$user) {
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        $nbj = $user->nb_jour_conge - $conge->nbrJour;
+        $user->nb_jour_conge = $nbj;
+        $user->save();
+    }
+        
+        
+    /*Notifications::create([
+        'user_id' => $conge->user_id,
+        'message' => 'Votre demande de congé a été acceptée.',
+    ]);*/
+    $conge->enCongé = true;
+    $conge->save();
+
+    return response()->json($conge);
 }
+public function refuseConge($id)
+{
+  $conge = congé::find($id);
+
+    if (!$conge) {
+        return response()->json(['error' => 'Congé non trouvé'], 404);
+    }
+
+    $conge->status = 'refusé';
+    $conge->enCongé = false;
+    $conge->save();
+
+    return response()->json([
+        'message' => 'Conge refused successfully'
+    ], 200);
+}
+
+
+public function getCongeAttente()
+    {
+        $congéAttente = congé::where('congés.status', '=', 'attente')
+            ->join('users', 'users.id', '=', 'congés.user_id')
+            ->select('congés.*', 'users.nom', 'users.prenom')
+            ->get();
+        return response()->json($congéAttente);
+    }
+
+public function getCongeApprove()
+    {
+        $congéAttente = congé::where('congés.status', '=', 'accepté')
+            ->join('users', 'users.id', '=', 'congés.user_id')
+            ->select('congés.*', 'users.nom', 'users.prenom')
+            ->get();
+        return response()->json($congéAttente);
+    }
+
+public function getCongeRefuse()
+    {
+        $congéAttente = congé::where('congés.status', '=', 'refusé')
+            ->join('users', 'users.id', '=', 'congés.user_id')
+            ->select('congés.*', 'users.nom', 'users.prenom')
+            ->get();
+        return response()->json($congéAttente);
+    }
+
+public function getResultByUser($user_id)
+{
+   
+    $conges = congé::where('user_id', $user_id)->get();
+
+        if (is_null($conges)) {
+            return response()->json(['error' => "Utilisateur n'est pas utulisé"], 404);
+        } else {
+    return response()->json(["conges"=>$conges], 200);
+        }
+}}
