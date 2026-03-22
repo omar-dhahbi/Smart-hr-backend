@@ -53,8 +53,14 @@ class CongéController extends Controller
             $conge->photo = "/images/" . $picture;
         }
         $conge->cause = $request->cause;
-        $conge->status = 'attente';
-        $conge->enCongé = false;
+        if ($dateDebut->isPast()) {
+            $conge->status = 'refusé';
+            $conge->enCongé = false;
+        }
+        else {
+            $conge->status = 'attente';
+            $conge->enCongé = false;
+        }
         $conge->save();
         /*$rhUsers = users::where('role', 'RH')->get();
         foreach ($rhUsers as $rh) {
@@ -87,8 +93,8 @@ class CongéController extends Controller
         $user->nb_jour_conge = $nbj;
         $user->save();
     }
-        
-        
+
+
     /*Notifications::create([
         'user_id' => $conge->user_id,
         'message' => 'Votre demande de congé a été acceptée.',
@@ -145,7 +151,7 @@ public function getCongeRefuse()
 
 public function getResultByUser($user_id)
 {
-   
+
     $conges = congé::where('user_id', $user_id)->get();
 
         if (is_null($conges)) {

@@ -36,12 +36,12 @@ Route::group(['prefix' => 'auth'],  function () {
 });
 //departements
 Route::group(['prefix' => 'departements'], function () {
-    Route::get('get_departements', [DepartementController::class, 'index']);
-    Route::get('get_departements/{id}', [DepartementController::class, 'getdepartementsById']);
-    Route::post('add_departement', [DepartementController::class, 'store']);
-    Route::put('update_departement/{id}', [DepartementController::class, 'update']);
-    Route::delete('delete_departement/{id}', [DepartementController::class, 'destroy']);
-    Route::get('searchDepartement/search', [DepartementController::class, 'search']);
+    Route::get('get_departements', [DepartementController::class, 'index'])->middleware(['auth:api','role:admin']);
+    Route::get('get_departements/{id}', [DepartementController::class, 'getdepartementsById'])->middleware(['auth:api','role:admin']);
+    Route::post('add_departement', [DepartementController::class, 'store'])->middleware(['auth:api','role:admin']);
+    Route::put('update_departement/{id}', [DepartementController::class, 'update'])->middleware(['auth:api','role:admin']);
+    Route::delete('delete_departement/{id}', [DepartementController::class, 'destroy'])->middleware(['auth:api','role:admin']);
+    Route::get('searchDepartement/search', [DepartementController::class, 'search'])->middleware(['auth:api','role:admin']);
 });
 //absence
 // Route::group(['prefix' => 'absence'],  function () {
@@ -78,13 +78,13 @@ Route::group(['prefix' => 'taches'],  function () {
 });
 
 Route::group(['prefix' => 'congé'],  function () {
-    Route::post('add_congé', [CongéController::class, 'demandeConge']);
-    Route::put('approve_congé/{id}', [CongéController::class, 'approveConge']);
-    Route::put('refuse_congé/{id}', [CongéController::class, 'refuseConge']);
-    Route::get('pending_congé', [CongéController::class, 'getCongeAttente']);
-    Route::get('approved_congé', [CongéController::class, 'getCongeApprove']);
-    Route::get('refused_congé', [CongéController::class, 'getCongeRefuse']);
-    Route::get('result_congé', [CongéController::class, 'getResultByUser']);
+    Route::post('add_congé', [CongéController::class, 'demandeConge'])->middleware(['auth:api','role:ChefProje,employee']);
+    Route::put('approve_congé/{id}', [CongéController::class, 'approveConge'])->middleware(['auth:api','role:RH']);
+    Route::put('refuse_congé/{id}', [CongéController::class, 'refuseConge'])->middleware(['auth:api','role:RH']);
+    Route::get('pending_congé', [CongéController::class, 'getCongeAttente'])->middleware(['auth:api','role:RH']);
+    Route::get('approved_congé', [CongéController::class, 'getCongeApprove'])->middleware(['auth:api','role:RH']);
+    Route::get('refused_congé', [CongéController::class, 'getCongeRefuse'])->middleware(['auth:api','role:RH']);
+    Route::get('result_congé', [CongéController::class, 'getResultByUser'])->middleware(['auth:api','role:ChefProje,employee']);
 });
 
 
