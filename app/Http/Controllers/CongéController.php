@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\congé;
-
+use App\Models\Notification;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CongéController extends Controller
@@ -17,7 +18,7 @@ class CongéController extends Controller
             'type' => 'required',
             'dateDebut' => 'required|date',
             'dateFin' => 'required|date|after:dateDebut',
-            'nbrJour' => 'required|integer'
+            'nbrJour' => 'required|integer',
         ]);
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 401);
@@ -25,10 +26,10 @@ class CongéController extends Controller
         $lastRequest = congé::where('user_id', $request->user_id)
             ->where('created_at', '>=', now()->subDay())
             ->first();
-        if (!empty($lastRequest)) {
+        if (! empty($lastRequest)) {
             return response()->json(['error' => 'Vous avez déjà soumis une demande de congé au cours des dernières 24 heures.'], 404);
         }
-        if ($request->type === "simple") {
+        if ($request->type === 'simple') {
             $user = User::find($request->user_id);
             $nbJourConge = $user->nb_jour_conge;
             $nbrjour = $nbJourConge - $request->nbrJour;
@@ -38,7 +39,7 @@ class CongéController extends Controller
             }
             // $user->save();
         }
-        $conge = new congé();
+        $conge = new congé;
         $conge->user_id = $request->user_id;
         $conge->type = $request->type;
         $conge->dateDebut = $request->dateDebut;
@@ -48,115 +49,126 @@ class CongéController extends Controller
             $file = $request->file('photo');
             $filename = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension();
-            $picture = date('His') . '-' . $filename;
+            $picture = date('His').'-'.$filename;
             $file->move(public_path('/public/images'), $picture);
-            $conge->photo = "/images/" . $picture;
+            $conge->photo = '/images/'.$picture;
         }
         $conge->cause = $request->cause;
-        if ($dateDebut->isPast()) {
+        if (Carbon::parse($request->dateDebut)->isPast()) {
             $conge->status = 'refusé';
             $conge->enCongé = false;
-        }
-        else {
+        } else {
             $conge->status = 'attente';
             $conge->enCongé = false;
         }
         $conge->save();
-        /*$rhUsers = users::where('role', 'RH')->get();
-        foreach ($rhUsers as $rh) {
-            Notifications::create([
+        $rhs = User::where('role', 'RH')->get();
+        foreach ($rhs as $rh) {
+            Notification::create([
                 'user_id' => $rh->id,
                 'message' => "Nouvelle demande de congé de {$user->nom} {$user->prenom}",
             ]);
-        }*/
+        }
+
         return response()->json(['message' => 'Demande de congé effectuée avec succès.'], 201);
     }
 
-     public function approveConge($id)
-{
-    $conge = congé::find($id);
+    public function approveConge($id)
+    {
+        $conge = congé::find($id);
 
-    if (!$conge) {
-        return response()->json(['error' => 'Congé non trouvé'], 404);
-    }
-
-    $conge->status = 'accepté';
-
-    if ($conge->type == "simple") {
-        $user = User::find($conge->user_id);
-
-        if (!$user) {
-            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+        if (! $conge) {
+            return response()->json(['error' => 'Congé non trouvé'], 404);
         }
 
-        $nbj = $user->nb_jour_conge - $conge->nbrJour;
-        $user->nb_jour_conge = $nbj;
-        $user->save();
+        $conge->status = 'accepté';
+
+        if ($conge->type == 'simple') {
+            $user = User::find($conge->user_id);
+
+            if (! $user) {
+                return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+            }
+
+            $nbj = $user->nb_jour_conge - $conge->nbrJour;
+            $user->nb_jour_conge = $nbj;
+            $user->save();
+        }
+
+        /*Notifications::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre demande de congé a été acceptée.',
+        ]);*/
+        $conge->enCongé = true;
+        $conge->save();
+        Notification::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre demande de congé a été acceptée.',
+        ]);
+
+        return response()->json($conge);
     }
 
+    public function refuseConge($id)
+    {
+        $conge = congé::find($id);
 
-    /*Notifications::create([
-        'user_id' => $conge->user_id,
-        'message' => 'Votre demande de congé a été acceptée.',
-    ]);*/
-    $conge->enCongé = true;
-    $conge->save();
+        if (! $conge) {
+            return response()->json(['error' => 'Congé non trouvé'], 404);
+        }
 
-    return response()->json($conge);
-}
-public function refuseConge($id)
-{
-  $conge = congé::find($id);
+        $conge->status = 'refusé';
+        $conge->enCongé = false;
+        $conge->save();
+        Notification::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre demande de congé a été refusée.',
+        ]);
 
-    if (!$conge) {
-        return response()->json(['error' => 'Congé non trouvé'], 404);
+        return response()->json([
+            'message' => 'Conge refused successfully',
+        ], 200);
     }
 
-    $conge->status = 'refusé';
-    $conge->enCongé = false;
-    $conge->save();
-
-    return response()->json([
-        'message' => 'Conge refused successfully'
-    ], 200);
-}
-
-
-public function getCongeAttente()
+    public function getCongeAttente()
     {
         $congéAttente = congé::where('congés.status', '=', 'attente')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
             ->get();
+
         return response()->json($congéAttente);
     }
 
-public function getCongeApprove()
+    public function getCongeApprove()
     {
         $congéAttente = congé::where('congés.status', '=', 'accepté')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
             ->get();
+
         return response()->json($congéAttente);
     }
 
-public function getCongeRefuse()
+    public function getCongeRefuse()
     {
         $congéAttente = congé::where('congés.status', '=', 'refusé')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
             ->get();
+
         return response()->json($congéAttente);
     }
 
-public function getResultByUser($user_id)
-{
+    public function getResultByUser($user_id)
+    {
 
-    $conges = congé::where('user_id', $user_id)->get();
+        $conges = congé::where('user_id', $user_id)->get();
 
         if (is_null($conges)) {
             return response()->json(['error' => "Utilisateur n'est pas utulisé"], 404);
         } else {
-    return response()->json(["conges"=>$conges], 200);
+            return response()->json(['conges' => $conges], 200);
         }
-}}
+    }
+}
