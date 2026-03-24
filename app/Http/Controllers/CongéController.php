@@ -15,7 +15,7 @@ class CongéController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required',
-            'type' => 'required',
+            'type' => 'required', 
             'dateDebut' => 'required|date',
             'dateFin' => 'required|date|after:dateDebut',
             'nbrJour' => 'required|integer',

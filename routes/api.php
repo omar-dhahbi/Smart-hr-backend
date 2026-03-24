@@ -72,8 +72,10 @@ Route::group(['prefix' => 'taches'], function () {
     Route::put('update_tache/{id}', [TacheController::class, 'update']);
     Route::delete('delete_tache/{id}', [TacheController::class, 'destroy']);
     // Route::get('searchTache/search', [TacheController::class, 'search']);
-    Route::get('/employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
+    Route::get('employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
         ->middleware(['auth:api', 'role:ChefProjet']);
+    Route::get('getTacheByUser/{user_id}', [TacheController::class, 'getTacheByUserId']);
+
 });
 
 Route::group(['prefix' => 'congé'], function () {

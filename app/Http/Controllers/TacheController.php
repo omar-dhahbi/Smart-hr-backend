@@ -226,4 +226,17 @@ class TacheController extends Controller
             ], 200);
 }
 
+public function getTacheByUserId($user_id){
+
+        $tache = tache::join('departement_tache_users', 'taches.id', '=', 'departement_tache_users.tache_id')
+            ->join('departements', 'departement_tache_users.departement_id', '=', 'departements.id')
+            ->join('users', 'departements.id', '=', 'users.departement_id')
+            ->select('taches.*', 'departements.NomDepartement')
+            ->where('users.id', '=', $user_id)
+            ->get();
+
+        return $tache;
+    }
+
+
 }
