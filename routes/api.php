@@ -3,12 +3,11 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CongéController;
 use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TacheController;
-use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
@@ -72,7 +71,7 @@ Route::group(['prefix' => 'taches'], function () {
     Route::get('get_tache/{id}', [TacheController::class, 'getDataById'])->middleware(['auth:api', 'role:ChefProjet']);
     Route::post('add_tache', [TacheController::class, 'store'])->middleware(['auth:api', 'role:ChefProjet']);
     Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware(['auth:api', 'role:ChefProjet,employee']);
-    //Route::delete('delete_tache/{id}', [TacheController::class, 'destroy']);
+    // Route::delete('delete_tache/{id}', [TacheController::class, 'destroy']);
     // Route::get('searchTache/search', [TacheController::class, 'search']);
     Route::get('employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
         ->middleware(['auth:api', 'role:ChefProjet']);
@@ -90,9 +89,6 @@ Route::group(['prefix' => 'congé'], function () {
     Route::get('result_congé/{user_id}', [CongéController::class, 'getResultByUser'])->middleware(['auth:api', 'role:ChefProjet,employee']);
 });
 Route::group(['prefix' => 'Notification'], function () {
-    Route::get('{user_id}', [NotificationController::class, 'getNotification'])
-        /*->middleware(['auth:api', 'role:ChefProjet,employee,RH'])*/;
-
-    Route::put('read/{id}', [NotificationController::class, 'markAsRead'])
-        ->middleware(['auth:api']);
+    Route::get('{user_id}', [NotificationController::class, 'getNotification'])->middleware(['auth:api', 'role:ChefProjet,employee,RH']);
+    Route::put('read/{id}', [NotificationController::class, 'markAsRead'])->middleware(['auth:api', 'role:ChefProjet,employee,RH']);
 });

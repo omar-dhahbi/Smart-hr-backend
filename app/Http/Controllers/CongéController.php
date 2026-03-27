@@ -15,7 +15,7 @@ class CongéController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required',
-            'type' => 'required', 
+            'type' => 'required',
             'dateDebut' => 'required|date',
             'dateFin' => 'required|date|after:dateDebut',
             'nbrJour' => 'required|integer',
@@ -135,6 +135,7 @@ class CongéController extends Controller
         $congéAttente = congé::where('congés.status', '=', 'attente')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
+            ->orderBy('congés.id', 'desc')
             ->get();
 
         return response()->json($congéAttente);
@@ -145,6 +146,7 @@ class CongéController extends Controller
         $congéAttente = congé::where('congés.status', '=', 'accepté')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
+            ->orderBy('congés.id', 'desc')
             ->get();
 
         return response()->json($congéAttente);
@@ -155,6 +157,8 @@ class CongéController extends Controller
         $congéAttente = congé::where('congés.status', '=', 'refusé')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
+            ->orderBy('congés.id', 'desc')
+
             ->get();
 
         return response()->json($congéAttente);
@@ -163,7 +167,9 @@ class CongéController extends Controller
     public function getResultByUser($user_id)
     {
 
-        $conges = congé::where('user_id', $user_id)->get();
+        $conges = congé::where('user_id', $user_id)
+            ->orderBy('id', 'desc')
+            ->get();
 
         if (is_null($conges)) {
             return response()->json(['error' => "Utilisateur n'est pas utulisé"], 404);
