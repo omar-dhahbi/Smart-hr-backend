@@ -35,7 +35,7 @@ Route::group(['prefix' => 'auth'], function () {
 });
 // departements
 Route::group(['prefix' => 'departements'], function () {
-    Route::get('get_departements', [DepartementController::class, 'index'])->middleware(['auth:api', 'role:admin']);
+    Route::get('get_departements', [DepartementController::class, 'index'])->middleware(['auth:api', 'role:admin,RH']);
     Route::get('get_departements/{id}', [DepartementController::class, 'getdepartementsById'])->middleware(['auth:api', 'role:admin']);
     Route::post('add_departement', [DepartementController::class, 'store'])->middleware(['auth:api', 'role:admin']);
     Route::put('update_departement/{id}', [DepartementController::class, 'update'])->middleware(['auth:api', 'role:admin']);
@@ -88,9 +88,6 @@ Route::group(['prefix' => 'congé'], function () {
     Route::get('result_congé', [CongéController::class, 'getResultByUser'])->middleware(['auth:api', 'role:ChefProjet,employee']);
 });
 Route::group(['prefix' => 'Notification'], function () {
-    Route::get('{user_id}', [NotificationController::class, 'getNotification'])
-        ->middleware(['auth:api']);
-
-    Route::put('read/{id}', [NotificationController::class, 'markAsRead'])
-        ->middleware(['auth:api']);
+    Route::get('{user_id}', [NotificationController::class, 'getNotification'])->middleware(['auth:api', 'role:ChefProjet,employee,RH']);
+    Route::put('read/{id}', [NotificationController::class, 'markAsRead'])->middleware(['auth:api', 'role:ChefProjet,employee,RH']);
 });
