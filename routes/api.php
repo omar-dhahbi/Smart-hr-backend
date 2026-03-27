@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CongéController;
 use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TacheController;
 use Illuminate\Http\Request;
@@ -66,15 +67,15 @@ Route::group(['prefix' => 'stat'], function () {
     Route::get('top-present-admin', [StatistiqueController::class, 'EmployeLePlusPresentMoisDernierRH'])->middleware(['auth:api', 'role:admin']);
 });
 Route::group(['prefix' => 'taches'], function () {
-    Route::get('get_taches', [TacheController::class, 'index']);
-    Route::get('get_tache/{id}', [TacheController::class, 'getDataById']);
-    Route::post('add_tache', [TacheController::class, 'store']);
-    Route::put('update_tache/{id}', [TacheController::class, 'update']);
-    Route::delete('delete_tache/{id}', [TacheController::class, 'destroy']);
+    Route::get('get_taches', [TacheController::class, 'index'])->middleware(['auth:api', 'role:ChefProjet']);
+    Route::get('get_tache/{id}', [TacheController::class, 'getDataById'])->middleware(['auth:api', 'role:ChefProjet']);
+    Route::post('add_tache', [TacheController::class, 'store'])->middleware(['auth:api', 'role:ChefProjet']);
+    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware(['auth:api', 'role:ChefProjet,employee']);
+    // Route::delete('delete_tache/{id}', [TacheController::class, 'destroy']);
     // Route::get('searchTache/search', [TacheController::class, 'search']);
     Route::get('employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])
         ->middleware(['auth:api', 'role:ChefProjet']);
-    Route::get('getTacheByUser/{user_id}', [TacheController::class, 'getTacheByUserId']);
+    Route::get('getTacheByUser/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api', 'role:employee']);
 
 });
 
@@ -85,7 +86,7 @@ Route::group(['prefix' => 'congé'], function () {
     Route::get('pending_congé', [CongéController::class, 'getCongeAttente'])->middleware(['auth:api', 'role:RH']);
     Route::get('approved_congé', [CongéController::class, 'getCongeApprove'])->middleware(['auth:api', 'role:RH']);
     Route::get('refused_congé', [CongéController::class, 'getCongeRefuse'])->middleware(['auth:api', 'role:RH']);
-    Route::get('result_congé', [CongéController::class, 'getResultByUser'])->middleware(['auth:api', 'role:ChefProjet,employee']);
+    Route::get('result_congé/{user_id}', [CongéController::class, 'getResultByUser'])->middleware(['auth:api', 'role:ChefProjet,employee']);
 });
 Route::group(['prefix' => 'Notification'], function () {
     Route::get('{user_id}', [NotificationController::class, 'getNotification'])->middleware(['auth:api', 'role:ChefProjet,employee,RH']);
