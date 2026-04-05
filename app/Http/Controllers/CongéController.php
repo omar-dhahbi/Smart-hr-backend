@@ -70,17 +70,13 @@ class CongéController extends Controller
             return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
-        // if ($user->role === 'RH') {
-        //     $receivers = User::where('role', 'admin')->get();
-        // } else {
-        //     $receivers = User::where('role', 'RH')->get();
-        // }
-        // foreach ($receivers as $receiver) {
-        //     Notification::create([
-        //         'user_id' => $receiver->id,
-        //         'message' => "Nouvelle demande de congé de {$user->nom} {$user->prenom}",
-        //     ]);
-        // }
+        $receivers = User::whereIn('role', ['ResponsableRh', 'agentRh'])->get();
+        foreach ($receivers as $r) {
+            Notification::create([
+                'user_id' => $r->id,
+                'message' => "Nouvelle demande de congé de {$user->nom} {$user->prenom}",
+            ]);
+        }
 
         return response()->json(['message' => 'Demande de congé effectuée avec succès.'], 201);
     }
@@ -94,16 +90,13 @@ class CongéController extends Controller
 
         $conge->status = 'accepté';
         $conge->save();
-
-        // // notification au Responsable RH
-        // $responsables = User::where('role', 'ResponsableRh')->get();
-
-        // foreach ($responsables as $resp) {
-        //     Notification::create([
-        //         'user_id' => $resp->id,
-        //         'message' => 'Nouvelle demande à valider (pré-acceptée)',
-        //     ]);
-        // }
+        $receivers = User::whereIn('role', ['employee', 'ChefProjet', 'ResponsableRh'])->get();
+        foreach ($receivers as $r) {
+            Notification::create([
+                'user_id' => $r->id,
+                'message' => "Congé pré-accepté par Agent RH pour {$conge->user->nom} {$conge->user->prenom}",
+            ]);
+        }
 
         return response()->json(['message' => 'Pré-acceptation effectuée']);
     }
@@ -125,6 +118,10 @@ class CongéController extends Controller
         //     'user_id' => $conge->user_id,
         //     'message' => 'Votre demande de congé a été refusée (Agent RH)',
         // ]);
+        Notification::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre demande de congé a été refusée par Agent RH',
+        ]);
 
         return response()->json(['message' => 'Refus effectué']);
     }
@@ -152,6 +149,13 @@ class CongéController extends Controller
         //     'user_id' => $conge->user_id,
         //     'message' => 'Votre congé est accepté définitivement',
         // ]);
+        $receivers = User::whereIn('role', ['employee', 'ChefProjet', 'agentRh'])->get();
+        foreach ($receivers as $r) {
+            Notification::create([
+                'user_id' => $r->id,
+                'message' => "Votre congé de {$conge->user->nom} {$conge->user->prenom} est accepté définitivement",
+            ]);
+        }
 
         return response()->json(['message' => 'Acceptation finale effectuée']);
     }
@@ -163,7 +167,6 @@ class CongéController extends Controller
         if (! $conge) {
             return response()->json(['error' => 'Congé non trouvé'], 404);
         }
-
         $conge->status2 = 'refusé';
         $conge->enCongé = false;
         $conge->save();
@@ -173,12 +176,19 @@ class CongéController extends Controller
         //     'message' => 'Votre demande a été refusée par Responsable RH',
         // ]);
 
+        $receivers = User::whereIn('role', ['employee', 'ChefProjet', 'agentRh'])->get();
+        foreach ($receivers as $r) {
+            Notification::create([
+                'user_id' => $r->id,
+                'message' => "Votre demande de congé de {$conge->user->nom} {$conge->user->prenom} a été refusée définitivement",
+            ]);
+        }
+
         return response()->json(['message' => 'Refus final effectué']);
     }
 
     public function getCongeAttente(Request $request)
     {
-
         $query = congé::join('users', 'users.id', '=', 'congés.user_id') // jointure avec users
             ->select('congés.*', 'users.nom', 'users.prenom') // sélectionner données congé + nom/prénom
             ->where(function ($q) {
