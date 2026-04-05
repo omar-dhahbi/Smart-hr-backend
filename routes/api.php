@@ -79,7 +79,7 @@ Route::group(['prefix' => 'taches'], function () {
 });
 Route::group(['prefix' => 'Notification'], function () {
     Route::get('{user_id}', [NotificationController::class, 'getNotification'])->middleware(['auth:api', 'role:chefProjet,employee,RH']);
-    Route::put('read/{id}', [NotificationController::class, 'markAsRead'])->middleware(['auth:api', 'role:chefProjet,employee,RH']);
+    Route::put('read/{id}', [NotificationController::class, '   '])->middleware(['auth:api', 'role:chefProjet,employee,RH']);
 });
 
 Route::group(['prefix' => 'congé'], function () {
