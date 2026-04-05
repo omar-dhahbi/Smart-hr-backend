@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('photo')->nullable();
             $table->string('cause')->nullable();
             $table->string('status')->default('attente');
+            $table->string('status2')->default('attente');
+
             $table->boolean('enCongé')->default(false);
             $table->timestamps();
         });
