@@ -87,6 +87,9 @@ Route::group(['prefix' => 'congé'], function () {
     Route::post('add', [CongéController::class, 'demandeConge'])
         ->middleware(['auth:api', 'role:employee,chefProjet']);
 
+    Route::post('addConge', [CongéController::class, 'demandeCongeAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+
     Route::put('pre-approve/{id}', [CongéController::class, 'preApproveConge'])
         ->middleware(['auth:api', 'role:agentRh']);
 
@@ -96,11 +99,17 @@ Route::group(['prefix' => 'congé'], function () {
     Route::put('final-approve/{id}', [CongéController::class, 'finalApproveConge'])
         ->middleware(['auth:api', 'role:ResponsableRh']);
 
+    Route::put('approve-agentRh/{id}', [CongéController::class, 'ApproveCongeAgentRh'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+
+    Route::put('refuse-agentRh/{id}', [CongéController::class, 'RefuseCongeAgentRh'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+
     Route::put('final-refuse/{id}', [CongéController::class, 'finalRefuseConge'])
         ->middleware(['auth:api', 'role:ResponsableRh']);
 
     Route::get('result/{user_id}', [CongéController::class, 'getResultByUser'])
-        ->middleware(['auth:api', 'role:employee,chefProjet']);
+        ->middleware(['auth:api', 'role:employee,chefProjet, agentRh']);
     Route::get('attente', [CongéController::class, 'getCongeAttente'])
         ->middleware(['auth:api', 'role:agentRh,ResponsableRh']);
 
