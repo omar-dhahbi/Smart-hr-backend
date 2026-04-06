@@ -70,7 +70,7 @@ class CongéController extends Controller
             return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
-        $receivers = User::whereIn('role', ['ResponsableRh', 'agentRh'])->get();
+        $receivers = User::whereIn('role', ['agentRh'])->get();
         foreach ($receivers as $r) {
             Notification::create([
                 'user_id' => $r->id,
@@ -80,6 +80,86 @@ class CongéController extends Controller
 
         return response()->json(['message' => 'Demande de congé effectuée avec succès.'], 201);
     }
+
+
+
+    public function demandeCongeAgentRH(Request $request)
+      {
+    $validator = Validator::make($request->all(), [
+        'user_id' => 'required',
+        'type' => 'required',
+        'dateDebut' => 'required|date',
+        'dateFin' => 'required|date|after:dateDebut',
+        'nbrJour' => 'required|integer',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['error' => $validator->errors()], 401);
+    }
+
+    $user = User::find($request->user_id);
+
+    if (!$user) {
+        return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+    }
+
+    // ⛔ منع أكثر من طلب في 24h
+    $lastRequest = conge::where('user_id', $request->user_id)
+        ->where('created_at', '>=', now()->subDay())
+        ->first();
+
+    if (!empty($lastRequest)) {
+        return response()->json([
+            'error' => 'Vous avez déjà soumis une demande خلال 24h.'
+        ], 409);
+    }
+
+    // ✅ إنشاء الطلب
+    $conge = new conge;
+    $conge->user_id = $request->user_id;
+    $conge->type = $request->type;
+    $conge->dateDebut = $request->dateDebut;
+    $conge->dateFin = $request->dateFin;
+    $conge->nbrJour = $request->nbrJour;
+    $conge->cause = $request->cause;
+
+    // 📸 upload image
+    if ($request->hasFile('photo')) {
+        $file = $request->file('photo');
+        $filename = time() . '-' . $file->getClientOriginalName();
+        $file->move(public_path('images'), $filename);
+        $conge->photo = 'images/' . $filename;
+    }
+
+    // 📌 الحالة
+    if (Carbon::parse($request->dateDebut)->isPast()) {
+        //$conge->status = 'refusé';
+        $conge->status2 = 'refusé';
+    } else {
+        // هنا الفرق 👇
+        //$conge->status = 'attente'; // يعني agentRH وافق
+        $conge->status2 = 'attente'; // يستنى responsableRH
+    }
+
+    $conge->enConge = false;
+
+    $conge->save();
+
+    // 🔔 إرسال notification فقط لـ ResponsableRH
+    $receivers = User::where('role', 'ResponsableRH')->get();
+
+    foreach ($receivers as $r) {
+        Notification::create([
+            'user_id' => $r->id,
+            'message' => "Nouvelle demande (AgentRH) de {$user->nom} {$user->prenom}",
+        ]);
+    }
+
+    return response()->json([
+        'message' => 'Demande envoyée au Responsable RH avec succès.'
+    ], 201);
+}
+
 
     public function preApproveConge($id)
     {
@@ -185,6 +265,60 @@ class CongéController extends Controller
         }
 
         return response()->json(['message' => 'Refus final effectué']);
+    }
+
+
+    public function ApproveCongeAgentRh($id)
+    {
+        $conge = congé::find($id);
+        $conge->status2 = 'accepté';
+        $conge->enCongé = true;
+
+        // Déduction jours
+        if ($conge->type == 'autre') {
+            $user = User::find($conge->user_id);
+            $user->nb_jour_conge -= $conge->nbrJour;
+            $user->save();
+        }
+
+        $conge->save();
+
+        // Notification::create([
+        //     'user_id' => $conge->user_id,
+        //     'message' => 'Votre congé est accepté définitivement',
+        // ]);
+        $receivers = User::whereIn('role','agentRh')->get();
+        foreach ($receivers as $r) {
+            Notification::create([
+                'user_id' => $r->id,
+                'message' => "Votre congé de {$conge->user->nom} {$conge->user->prenom} est accepté ",
+            ]);
+        }
+
+        return response()->json(['message' => 'Acceptation  effectuée']);
+    }
+
+    public function RefuseCongeAgentRh($id)
+    {
+        $conge = congé::find($id);
+        $conge->status2 = 'refusé';
+        $conge->enCongé = false;
+        $conge->save();
+
+        // Notification::create([
+        //     'user_id' => $conge->user_id,
+        //     'message' => 'Votre demande a été refusée par Responsable RH',
+        // ]);
+
+        $receivers = User::whereIn('role','agentRh')->get();
+        foreach ($receivers as $r) {
+            Notification::create([
+                'user_id' => $r->id,
+                'message' => "Votre demande de congé de {$conge->user->nom} {$conge->user->prenom} a été refusée ",
+            ]);
+        }
+
+        return response()->json(['message' => 'Refus effectué']);
     }
 
     public function getCongeAttente(Request $request)
