@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('departement_tache_users', function (Blueprint $table) {
+        Schema::create('fiches_paies', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('departement_id');
-            $table->foreign('departement_id')->references('id')->on('departements');
-            $table->unsignedBigInteger('tache_id');
-            $table->foreign('tache_id')->references('id')->on('taches');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
+            $table->string('file')->nullable();
+            // $table->string('status')->default('en_cours');
+
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('departement_tache_users');
+        Schema::dropIfExists('fiches_paies');
     }
 };

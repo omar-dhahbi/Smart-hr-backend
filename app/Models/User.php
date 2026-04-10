@@ -8,15 +8,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
-use App\Models\departements;
-
-
 
 class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-  protected $fillable = [
+    protected $fillable = [
         'nom',
         'prenom',
         'email',
@@ -38,7 +35,7 @@ class User extends Authenticatable implements JWTSubject
         'departement_id',
         'jours_absence',
         'jours_presence',
-        'derniere_presence'
+        'derniere_presence',
     ];
 
     protected $hidden = [
@@ -46,21 +43,28 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    public function fichesPaie()
+    {
+        return $this->hasMany(Fiches_paie::class, 'user_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-     public function getJWTIdentifier()
+
+    public function getJWTIdentifier()
     {
         return $this->getKey();
     }
-  public function getJWTCustomClaims()
+
+    public function getJWTCustomClaims()
     {
         return [];
-    }
-     public function departements()
-    {
-        return $this->belongsTo(departements::class);
     }
 }

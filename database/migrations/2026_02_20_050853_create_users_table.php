@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('role')->default('employee');
             $table->string('code')->nullable();
             //  $table->string('grade')->nullable();
-            $table->boolean('connecte')->default(false);
+            // $table->boolean('connecte')->default(false);
             $table->timestamp('session_ouverte')->nullable();
             $table->timestamp('session_fermee')->nullable();
             $table->double('prix_heure')->nullable();
@@ -32,10 +32,9 @@ return new class extends Migration
             $table->string('Contrat')->nullable();
             $table->boolean('status');
             $table->date('date_naissance');
-            $table->unsignedBigInteger('departement_id')->nullable();
-            $table->foreign('departement_id')->references('id')->on('departements');
+            // $table->unsignedBigInteger('departement_id')->nullable();
+            // $table->foreign('departement_id')->references('id')->on('departements');
             // $table->boolean('first_login')->default(true);
-
             $table->integer('jours_absence')->default(0);
             $table->integer('jours_presence')->default(0);
             $table->date('derniere_presence')->nullable();

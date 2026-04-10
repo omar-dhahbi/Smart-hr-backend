@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Mail\Restarpasword;
 use App\Mail\SignupEmail;
+use App\Models\fiches_paie;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -57,7 +59,7 @@ class AuthController extends Controller
         }
         $user->prix_heure = $request->prix_heure;
         $user->role = $request->role;
-        $user->departement_id = $request->departement_id;
+        // $user->departement_id = $request->departement_id;
 
         // $user->grade = $request->grade;
         $user->save();
@@ -273,7 +275,7 @@ class AuthController extends Controller
             $user->session_ouverte = $now;
         }
         $user->session_fermee = null;
-        $user->session_fermee = null;
+        // $user->session_fermee = null;
 
         // 📅 Gestion présence (une seule fois par jour)
         $today = now()->toDateString();
@@ -478,5 +480,70 @@ class AuthController extends Controller
             ->get();
 
         return response()->json($users);
+    }
+
+    public function genererFichePaie($user_id)
+    {
+        $user = User::find($user_id);
+
+        if (! $user) {
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        if (! in_array($user->role, ['employee', 'chefProjet'])) {
+            return response()->json(['error' => 'Rôle invalide'], 403);
+        }
+
+        $now = Carbon::now();
+
+        // éviter doublon fiche paie par mois
+        $existing = fiches_paie::where('user_id', $user->id)
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'error' => 'Fiche déjà générée ce mois',
+            ]);
+        }
+        $data = [
+            'nom' => $user->nom,
+            'prenom' => $user->prenom,
+            'date_naissance' => Carbon::parse($user->date_naissance)->format('Y-m-d'),
+            'heures' => $user->nb_heure_par_jour,
+            'salaire' => $user->salaire,
+            'date' => now()->format('Y-m-d'),
+        ];
+        $pdf = PDF::loadView('pdf.fiche_paie', $data);
+
+        if (! file_exists(public_path('fiches'))) {
+            mkdir(public_path('fiches'), 0777, true);
+        }
+
+        $fileName = 'fiche_'.$user->id.'_'.now()->format('YmdHis').'.pdf';
+        $path = 'fiches/'.$fileName;
+
+        $pdf->save(public_path($path));
+
+        $fiche = fiches_paie::create([
+            'user_id' => $user->id,
+            'file' => $path,
+        ]);
+
+        return response()->json([
+            'message' => 'Fiche générée avec succès',
+            'file' => asset($path),
+            'data' => $fiche,
+        ]);
+    }
+
+    public function getFcihePaiParUserid($user_id)
+    {
+        $fiches = fiches_paie::where('user_id', $user_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($fiches);
     }
 }

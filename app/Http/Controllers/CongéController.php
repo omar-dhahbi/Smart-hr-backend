@@ -11,21 +11,19 @@ use Illuminate\Support\Facades\Validator;
 
 class CongéController extends Controller
 {
-    // Demande de congé pour un utilisateur classique
     public function demandeConge(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required',
             'type' => 'required',
             'dateDebut' => 'required|date',
-            'dateFin' => 'required|date|after:dateDebut',
+            'dateFin' => 'required|date',
             'nbrJour' => 'required|integer',
         ]);
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 401);
         }
 
-        // Vérifier qu'il n'y a pas de demande dans les dernières 24h
         $lastRequest = congé::where('user_id', $request->user_id)
             ->where('created_at', '>=', now()->subDay())
             ->first();
@@ -41,7 +39,6 @@ class CongéController extends Controller
         $conge->nbrJour = $request->nbrJour;
         $conge->cause = $request->cause;
 
-        // Upload photo si existe
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
             $filename = date('His').'-'.$file->getClientOriginalName();
@@ -59,28 +56,26 @@ class CongéController extends Controller
         }
         $conge->enCongé = false;
         $conge->save();
-
-        // Notifications aux agents RH
         $user = User::find($request->user_id);
         $receivers = User::where('role', 'agentRh')->get();
         foreach ($receivers as $r) {
             Notification::create([
                 'user_id' => $r->id,
                 'message' => "Nouvelle demande de congé de {$user->nom} {$user->prenom}",
+                'type' => 'demande-conge',
             ]);
         }
 
         return response()->json(['message' => 'Demande de congé effectuée avec succès.'], 201);
     }
 
-    // Demande de congé pour un Agent RH (notif au ResponsableRH)
     public function demandeCongeAgentRH(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required',
             'type' => 'required',
             'dateDebut' => 'required|date',
-            'dateFin' => 'required|date|after:dateDebut',
+            'dateFin' => 'required|date',
             'nbrJour' => 'required|integer',
         ]);
         if ($validator->fails()) {
@@ -113,17 +108,21 @@ class CongéController extends Controller
             $file->move(public_path('images'), $filename);
             $conge->photo = 'images/'.$filename;
         }
-
-        $conge->status2 = Carbon::parse($request->dateDebut)->isPast() ? 'refusé' : 'attente';
-        $conge->enCongé = false;
+        if (Carbon::parse($request->dateDebut)->isPast()) {
+            $conge->status = null;
+            $conge->status2 = 'refusé';
+        } else {
+            $conge->status = null;
+            $conge->status2 = 'attente';
+        }        $conge->enCongé = false;
         $conge->save();
-
-        // Notifications aux ResponsableRH
         $receivers = User::where('role', 'ResponsableRH')->get();
         foreach ($receivers as $r) {
             Notification::create([
                 'user_id' => $r->id,
                 'message' => "Nouvelle demande (AgentRH) de {$user->nom} {$user->prenom}",
+                'type' => 'demande-conge',
+
             ]);
         }
 
@@ -131,9 +130,11 @@ class CongéController extends Controller
     }
 
     // Pré-acceptation/refus par Agent RH
+    // Pré-acceptation
     public function preApproveConge($id)
     {
         $conge = congé::find($id);
+
         if (! $conge) {
             return response()->json(['error' => 'Congé non trouvé'], 404);
         }
@@ -141,11 +142,18 @@ class CongéController extends Controller
         $conge->status = 'accepté';
         $conge->save();
 
-        $receivers = User::whereIn('role', ['employee', 'ChefProjet', 'ResponsableRh'])->get();
-        foreach ($receivers as $r) {
+        // Notification user
+        Notification::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre demande de congé est pré-acceptée par Agent RH',
+            'type' => 'resultat-conge',
+        ]);
+        $responsables = User::where('role', 'ResponsableRh')->get();
+        foreach ($responsables as $r) {
             Notification::create([
                 'user_id' => $r->id,
-                'message' => "Congé pré-accepté par Agent RH pour {$conge->user->nom} {$conge->user->prenom}",
+                'message' => 'Demande de congé pré-acceptée en attente de validation finale',
+                'type' => 'resultat-conge',
             ]);
         }
 
@@ -158,44 +166,57 @@ class CongéController extends Controller
         if (! $conge) {
             return response()->json(['error' => 'Congé non trouvé'], 404);
         }
-
         $conge->status = 'refusé';
         $conge->status2 = 'refusé';
         $conge->enCongé = false;
         $conge->save();
-
         Notification::create([
             'user_id' => $conge->user_id,
             'message' => 'Votre demande de congé a été refusée par Agent RH',
+            'type' => 'resultat-conge',
         ]);
 
         return response()->json(['message' => 'Refus effectué']);
     }
 
-    // Acceptation/Refus final par Responsable RH
     public function finalApproveConge($id)
     {
         $conge = congé::find($id);
-        if (! $conge || $conge->status != 'accepté') {
+
+        if (! $conge) {
+            return response()->json(['error' => 'Congé non trouvé'], 404);
+        }
+
+        if ($conge->status === 'refusé') {
+            return response()->json(['error' => 'Demande refusée par Agent RH'], 400);
+        }
+        if ($conge->status === 'attente') {
             return response()->json(['error' => 'Pré-acceptation requise'], 400);
         }
 
         $conge->status2 = 'accepté';
         $conge->enCongé = true;
 
-        if ($conge->type == 'autre') {
-            $user = User::find($conge->user_id);
+        $user = User::find($conge->user_id);
+        if ($user) {
             $user->nb_jour_conge -= $conge->nbrJour;
             $user->save();
         }
-
         $conge->save();
 
-        $receivers = User::whereIn('role', ['employee', 'ChefProjet', 'agentRh'])->get();
-        foreach ($receivers as $r) {
+        Notification::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre congé est accepté définitivement',
+            'type' => 'resultat-conge',
+        ]);
+
+        $agents = User::where('role', 'agentRh')->get();
+        foreach ($agents as $a) {
             Notification::create([
-                'user_id' => $r->id,
-                'message' => "Votre congé de {$conge->user->nom} {$conge->user->prenom} est accepté définitivement",
+                'user_id' => $a->id,
+                'message' => 'Un congé a été validé définitivement',
+                'type' => 'resultat-conge',
+
             ]);
         }
 
@@ -205,6 +226,7 @@ class CongéController extends Controller
     public function finalRefuseConge($id)
     {
         $conge = congé::find($id);
+
         if (! $conge) {
             return response()->json(['error' => 'Congé non trouvé'], 404);
         }
@@ -213,24 +235,37 @@ class CongéController extends Controller
         $conge->enCongé = false;
         $conge->save();
 
-        $receivers = User::whereIn('role', ['employee', 'ChefProjet', 'agentRh'])->get();
-        foreach ($receivers as $r) {
-            Notification::create([
-                'user_id' => $r->id,
-                'message' => "Votre demande de congé de {$conge->user->nom} {$conge->user->prenom} a été refusée définitivement",
-            ]);
-        }
+        Notification::create([
+            'user_id' => $conge->user_id,
+            'message' => 'Votre demande de congé a été refusée définitivement',
+            'type' => 'resultat-conge',
+
+        ]);
 
         return response()->json(['message' => 'Refus final effectué']);
     }
 
     // Récupérer les congés par statut pour Responsable RH
-    public function getCongeAttenteResponsable(Request $request)
+    public function getCongeAttenteResponsable()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
-            ->select('congés.*', 'users.nom', 'users.prenom')
-            ->where('congés.status', 'accepté')
-            ->where('congés.status2', 'attente')
+            ->select('congés.*', 'users.nom', 'users.prenom', 'users.role')
+            ->where(function ($query) {
+
+                // employee / chefProjet → après validation agentRH
+                $query->where(function ($q) {
+                    $q->whereIn('users.role', ['employee', 'chefProjet'])
+                        ->where('congés.status', 'accepté')
+                        ->where('congés.status2', 'attente');
+                })
+
+                // agentRH → direct
+                    ->orWhere(function ($q) {
+                        $q->where('users.role', 'agentRh')
+                            ->where('congés.status2', 'attente');
+                    });
+
+            })
             ->orderBy('congés.id', 'desc')
             ->get();
 
@@ -241,7 +276,7 @@ class CongéController extends Controller
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
-            ->where('congés.status', 'accepté')
+            // ->where('congés.status', 'accepté')
             ->where('congés.status2', 'accepté')
             ->orderBy('congés.id', 'desc')
             ->get();
@@ -253,7 +288,7 @@ class CongéController extends Controller
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
             ->select('congés.*', 'users.nom', 'users.prenom')
-            ->where('congés.status', 'refusé')
+            // ->where('congés.status', 'refusé')
             ->where('congés.status2', 'refusé')
             ->orderBy('congés.id', 'desc')
             ->get();
@@ -281,13 +316,32 @@ class CongéController extends Controller
         return response()->json($conges);
     }
 
+    public function getResultByUserAgentRh($user_id)
+    {
+        $conges = congé::where('user_id', $user_id)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        foreach ($conges as $c) {
+            if ($c->status2 == 'refusé') {
+                $c->resultat = 'refusé';
+            } elseif ($c->status2 == 'accepté') {
+                $c->resultat = 'accepté';
+            } else {
+                $c->resultat = 'attente';
+            }
+        }
+
+        return response()->json($conges);
+    }
+
     // Récupérer congés par statut pour Agent RH
-    public function getcongéAttenteAgentRH()
+    public function getCongeAttenteAgentRH()
     {
         $conges = congé::where('congés.status', 'attente')
             ->join('users', 'users.id', '=', 'congés.user_id')
             ->whereIn('users.role', ['chefProjet', 'employee'])
-            ->select('congés.*', 'users.nom', 'users.prenom')
+            ->select('congés.*', 'users.*')
             ->orderBy('congés.id', 'desc')
             ->get();
 
@@ -300,7 +354,7 @@ class CongéController extends Controller
             ->whereIn('users.role', ['chefProjet', 'employee'])
             ->where('congés.status', 'accepté')
             ->where('congés.status2', 'accepté')
-            ->select('congés.*', 'users.nom', 'users.prenom')
+            ->select('congés.*', 'users.*')
             ->orderBy('congés.id', 'desc')
             ->get();
 
@@ -313,7 +367,7 @@ class CongéController extends Controller
             ->whereIn('users.role', ['chefProjet', 'employee'])
             ->where('congés.status', 'refusé')
             ->where('congés.status2', 'refusé')
-            ->select('congés.*', 'users.nom', 'users.prenom')
+            ->select('congés.*', 'users.*')
             ->orderBy('congés.id', 'desc')
             ->get();
 

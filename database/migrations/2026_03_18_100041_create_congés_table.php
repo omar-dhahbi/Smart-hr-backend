@@ -21,7 +21,7 @@ return new class extends Migration
             $table->integer('nbrJour');
             $table->string('photo')->nullable();
             $table->string('cause')->nullable();
-            $table->string('status')->default('attente');
+            $table->string('status')->nullable();
             $table->string('status2')->default('attente');
 
             $table->boolean('enCongé')->default(false);

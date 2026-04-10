@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('departements', function (Blueprint $table) {
+        Schema::create('taches', function (Blueprint $table) {
             $table->id();
-            $table->string('NomDepartement')->unique();
-            // $table->text('Description');
+            $table->string('Nom')->unique();
+            $table->string('Description')->unique();
+            $table->date('DateDebut');
+            $table->date('DateFin');
+            $table->string('status')->default('attente');
+
             $table->timestamps();
         });
     }
@@ -24,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('departements');
+        Schema::dropIfExists('taches');
     }
 };
