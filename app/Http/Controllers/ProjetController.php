@@ -10,81 +10,62 @@ class ProjetController extends Controller
 {
     public function index()
     {
-        return response()->json(Projets::all());
+        $Projets = Projets::get();
+
+        return response()->json($Projets);
     }
 
     public function getProjetById($id)
     {
-        $projet = Projets::find($id);
-
-        if (! $projet) {
-            return response()->json(['error' => 'Projet Not Found'], 404);
+        $Projets = Projets::find($id);
+        if (is_null($Projets)) {
+            return response()->json(['error' => 'Projet Not Found.'], 404);
         }
 
-        return response()->json($projet);
+        return response()->json(Projets::find($id));
     }
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'NomProjet' => 'required|unique:projets,NomProjet|min:2|string',
-            'Description' => 'required|min:5|string',
+            'Description' => 'required|min:5|alpha',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
+        $Projets = new Projets;
 
-        $projet = Projets::create([
-            'NomProjet' => $request->NomProjet,
-            'Description' => $request->Description,
-        ]);
+        $Projets->NomProjet = $request->NomProjet;
+        $Projets->Description = $request->Description;
+        $Projets->save();
 
         return response()->json([
             'message' => 'Projet added successfully',
-            'data' => $projet,
+            'data' => $Projets,
         ], 201);
     }
 
     public function update(Request $request, $id)
     {
-        $projet = Projets::find($id);
-
-        if (! $projet) {
-            return response()->json(['message' => 'Projet Not Found'], 404);
+        $Projets = Projets::find($id);
+        if (is_null($Projets)) {
+            return response()->json(['message' => 'Projets Not Found.'], 404);
         }
+        $Projets->update($request->all());
 
-        $validator = Validator::make($request->all(), [
-            'NomProjet' => "required|min:3|unique:projets,NomProjet,$id",
-            'Description' => 'required|min:5|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
-
-        $projet->update([
-            'NomProjet' => $request->NomProjet,
-            'Description' => $request->Description,
-        ]);
-
-        return response()->json([
-            'message' => 'Projet updated successfully',
-            'data' => $projet,
-        ]);
+        return response()->json($Projets);
     }
 
     public function destroy($id)
     {
-        $projet = Projets::find($id);
-
-        if (! $projet) {
-            return response()->json(['message' => 'Projet not found'], 404);
+         $Projets = Projets::find($id);
+        if (is_null($Projets)) {
+            return response()->json(['message' => 'Projet not found']);
         }
-
-        $projet->delete();
-
-        return response()->json(['message' => 'Projet deleted successfully']);
+        $Projets->delete();
+        return response()->json(['message' => 'Projets deleted']);
     }
 
     public function search(Request $request)

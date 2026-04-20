@@ -60,9 +60,13 @@ Route::group(['prefix' => 'taches'], function () {
     Route::get('get_taches', [TacheController::class, 'index'])->middleware(['auth:api', 'role:chefProjet']);
     Route::get('get_tache/{id}', [TacheController::class, 'getDataById'])->middleware(['auth:api', 'role:chefProjet']);
     Route::post('add_tache', [TacheController::class, 'store'])->middleware(['auth:api', 'role:chefProjet']);
-    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware(['auth:api', 'role:chefProjet,employee']);
-    Route::get('employees/{id}', [TacheController::class, 'getEmployeeByProjet'])->middleware(['auth:api', 'role:chefProjet']);
+    Route::put('update_status/{id}', [TacheController::class, 'updateStatus'])
+        ->middleware(['auth:api', 'role:chefProjet,employee']);
     Route::get('getTacheByUser/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api', 'role:employee']);
+    Route::get('getEmployeeNonCongé', [TacheController::class, 'getEmployeeNonCongé'])->middleware(['auth:api', 'role:chefProjet']);
+    Route::get('getTacheByProjet/{projet_id}', [TacheController::class, 'getTacheByProjetId'])
+        ->middleware(['auth:api', 'role:chefProjet']);
+
 });
 // Notifications
 Route::group(['prefix' => 'notifications'], function () {
@@ -126,13 +130,13 @@ Route::group(['prefix' => 'projets'], function () {
         ->middleware(['auth:api', 'role:employee,chefProjet']);
 
     Route::post('add', [ProjetController::class, 'store'])
-        ->middleware(['auth:api', 'role:agentRh']);
+        ->middleware(['auth:api', 'role:chefProjet']);
 
     Route::put('update/{id}', [ProjetController::class, 'update'])
-        ->middleware(['auth:api', 'role:agentRh']);
+        ->middleware(['auth:api', 'role:chefProjet']);
 
     Route::delete('delete/{id}', [ProjetController::class, 'destroy'])
-        ->middleware(['auth:api', 'role:agentRh']);
+        ->middleware(['auth:api', 'role:chefProjet']);
 
     Route::get('search', [ProjetController::class, 'search'])
         ->middleware(['auth:api', 'role:employee,chefProjet']);

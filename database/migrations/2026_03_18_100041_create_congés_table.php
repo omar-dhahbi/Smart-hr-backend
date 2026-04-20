@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->string('status2')->default('attente');
 
-            $table->boolean('enCongé')->default(false);
             $table->timestamps();
         });
     }
