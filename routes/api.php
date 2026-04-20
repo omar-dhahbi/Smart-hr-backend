@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CongéController;
-use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProjetController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TacheController;
 use Illuminate\Http\Request;
@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
 // Auth
 Route::group(['prefix' => 'auth'], function () {
     Route::put('restarpasword/{email}', [AuthController::class, 'restarpassword']);
@@ -33,61 +34,56 @@ Route::group(['prefix' => 'auth'], function () {
     Route::put('activeAccount/{id}', [AuthController::class, 'activeAccount'])->middleware(['auth:api', 'role:admin,ResponsableRh,agentRh']);
     Route::put('AccounNotActive/{id}', [AuthController::class, 'AccounNotActive'])->middleware(['auth:api', 'role:admin,ResponsableRh,agentRh']);
     Route::get('session-status', [AuthController::class, 'getSessionStatus'])->middleware(['auth:api', 'role:employee,agentRh,chefProjet']);
-    // Route::get('searchUsers', [AuthController::class, 'searchUser'])->middleware(['auth:api', 'role:RH,admin']);
+    Route::get('search', [AuthController::class, 'searchUser'])
+        ->middleware(['auth:api', 'role:admin,ResponsableRh,agentRh']);
 });
-// // departements
-// Route::group(['prefix' => 'departements'], function () {
-//     Route::get('get_departements', [DepartementController::class, 'index'])->middleware(['auth:api', 'role:admin,RH']);
-//     Route::get('get_departements/{id}', [DepartementController::class, 'getdepartementsById'])->middleware(['auth:api', 'role:admin']);
-//     Route::post('add_departement', [DepartementController::class, 'store'])->middleware(['auth:api', 'role:admin']);
-//     Route::put('update_departement/{id}', [DepartementController::class, 'update'])->middleware(['auth:api', 'role:admin']);
-//     Route::delete('delete_departement/{id}', [DepartementController::class, 'destroy'])->middleware(['auth:api', 'role:admin']);
-//     Route::get('searchDepartement/search', [DepartementController::class, 'search'])->middleware(['auth:api', 'role:admin']);
-// });
-// absence
-// Route::group(['prefix' => 'absence'],  function () {
-//     // Route::post('verifier-absences', [AuthController::class, 'Absence'])->middleware('role:admin,RH');
-//      Route::get('absence/{id}', [AuthController::class, 'absenceEmployee'])->middleware('role:admin,RH,employee');
-//     // Route::post('reset-salaire', [AuthController::class, 'resetSalaireMensuel'])->middleware('role:admin');
-//     // Route::get('most-absent', [StatistiqueController::class, 'EmployeePlusAbsent'])->middleware('role:admin,RH');
-//     // Route::get('most-present', [StatistiqueController::class, 'EmployeePlusPresent'])->middleware('role:admin,RH');
-// });
+
+// Statistiques
 Route::group(['prefix' => 'stat'], function () {
     Route::get('count-employees-rh', [StatistiqueController::class, 'CountEmployeeRH'])->middleware(['auth:api', 'role:agentRh']);
     Route::get('count-employees-admin', [StatistiqueController::class, 'CountEmployeeAdmin'])->middleware(['auth:api', 'role:admin']);
     Route::get('count-employees-ResponsableRh', [StatistiqueController::class, 'CountEmployeeResponsableRH'])->middleware(['auth:api', 'role:ResponsableRh']);
-    Route::get('employees-present-today-rh', [StatistiqueController::class, 'EmployeesPresentTodayRH'])->middleware(['auth:api', 'role:RH']);
     Route::get('employees-present-today', [StatistiqueController::class, 'EmployeesPresentToday'])->middleware(['auth:api', 'role:admin,ResponsableRh']);
-    Route::get('employees-present-list-rh', [StatistiqueController::class, 'EmployeesPresentListRH'])->middleware(['auth:api', 'role:RH']);
+    Route::get('employees-present-today-rh', [StatistiqueController::class, 'EmployeesPresentTodayRH'])->middleware(['auth:api', 'role:agentRh']);
     Route::get('employees-present-list', [StatistiqueController::class, 'EmployeesPresentList'])->middleware(['auth:api', 'role:admin,ResponsableRh']);
-    Route::get('employees-absent-today-rh', [StatistiqueController::class, 'EmployeesAbsentTodayRH'])->middleware(['auth:api', 'role:RH']);
+    Route::get('employees-present-list-rh', [StatistiqueController::class, 'EmployeesPresentListRH'])->middleware(['auth:api', 'role:agentRh']);
     Route::get('employees-absent-today', [StatistiqueController::class, 'EmployeesAbsentToday'])->middleware(['auth:api', 'role:admin,ResponsableRh']);
-    Route::get('employees-absent-list-rh', [StatistiqueController::class, 'EmployeesAbsentTodayListRH'])->middleware(['auth:api', 'role:RH']);
+    Route::get('employees-absent-today-rh', [StatistiqueController::class, 'EmployeesAbsentTodayRH'])->middleware(['auth:api', 'role:agentRh']);
     Route::get('employees-absent-list', [StatistiqueController::class, 'EmployeesAbsentTodayList'])->middleware(['auth:api', 'role:admin,ResponsableRh']);
-    Route::get('top-present-rh', [StatistiqueController::class, 'EmployeLePlusPresentMoisDernierAdmin'])->middleware(['auth:api', 'role:RH']);
-    Route::get('top-present-admin', [StatistiqueController::class, 'EmployeLePlusPresentMoisDernierRH'])->middleware(['auth:api', 'role:admin']);
+    Route::get('employees-absent-list-rh', [StatistiqueController::class, 'EmployeesAbsentTodayListRH'])->middleware(['auth:api', 'role:agentRh']);
+    // Route::get('top-present-rh', [StatistiqueController::class, 'EmployeLePlusPresentMoisDernierAdmin'])->middleware(['auth:api', 'role:agentRhH']);
+    // Route::get('top-present-admin', [StatistiqueController::class, 'EmployeLePlusPresentMoisDernierRH'])->middleware(['auth:api', 'role:admin']);
 });
+
+// Tâches
 Route::group(['prefix' => 'taches'], function () {
     Route::get('get_taches', [TacheController::class, 'index'])->middleware(['auth:api', 'role:chefProjet']);
     Route::get('get_tache/{id}', [TacheController::class, 'getDataById'])->middleware(['auth:api', 'role:chefProjet']);
     Route::post('add_tache', [TacheController::class, 'store'])->middleware(['auth:api', 'role:chefProjet']);
-    Route::put('update_tache/{id}', [TacheController::class, 'update'])->middleware(['auth:api', 'role:chefProjet,employee']);
-    // Route::delete('delete_tache/{id}', [TacheController::class, 'destroy']);
-    // Route::get('searchTache/search', [TacheController::class, 'search']);
-    Route::get('employees/{id}', [TacheController::class, 'getEmployeeBydepartement'])->middleware(['auth:api', 'role:chefProjet']);
+    Route::put('update_status/{id}', [TacheController::class, 'updateStatus'])
+        ->middleware(['auth:api', 'role:chefProjet,employee']);
     Route::get('getTacheByUser/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api', 'role:employee']);
+    Route::get('getEmployeeNonCongé', [TacheController::class, 'getEmployeeNonCongé'])->middleware(['auth:api', 'role:chefProjet']);
+    Route::get('getTacheByProjet/{projet_id}', [TacheController::class, 'getTacheByProjetId'])
+        ->middleware(['auth:api', 'role:chefProjet']);
+
 });
-Route::group(['prefix' => 'Notification'], function () {
-    Route::get('{user_id}', [NotificationController::class, 'getNotification'])->middleware(['auth:api', 'role:chefProjet,employee,RH']);
-    Route::put('read/{id}', [NotificationController::class, '   '])->middleware(['auth:api', 'role:chefProjet,employee,RH']);
+// Notifications
+Route::group(['prefix' => 'notifications'], function () {
+    Route::get('{user_id}', [NotificationController::class, 'getNotification'])
+        ->middleware(['auth:api', 'role:chefProjet,employee,ResponsableRh,agentRh']);
+
+    Route::put('read/{id}', [NotificationController::class, 'markAsRead'])
+        ->middleware(['auth:api', 'role:chefProjet,employee,ResponsableRh,agentRh']);
 });
 
-Route::group(['prefix' => 'congé'], function () {
+// Congés
+Route::group(['prefix' => 'conges'], function () {
 
-    Route::post('add', [CongéController::class, 'demandeConge'])
+    Route::post('demande', [CongéController::class, 'demandeConge'])
         ->middleware(['auth:api', 'role:employee,chefProjet']);
 
-    Route::post('addConge', [CongéController::class, 'demandeCongeAgentRH'])
+    Route::post('demande-agent', [CongéController::class, 'demandeCongeAgentRH'])
         ->middleware(['auth:api', 'role:agentRh']);
 
     Route::put('pre-approve/{id}', [CongéController::class, 'preApproveConge'])
@@ -99,23 +95,59 @@ Route::group(['prefix' => 'congé'], function () {
     Route::put('final-approve/{id}', [CongéController::class, 'finalApproveConge'])
         ->middleware(['auth:api', 'role:ResponsableRh']);
 
-    Route::put('approve-agentRh/{id}', [CongéController::class, 'ApproveCongeAgentRh'])
-        ->middleware(['auth:api', 'role:ResponsableRh']);
-
-    Route::put('refuse-agentRh/{id}', [CongéController::class, 'RefuseCongeAgentRh'])
-        ->middleware(['auth:api', 'role:ResponsableRh']);
-
     Route::put('final-refuse/{id}', [CongéController::class, 'finalRefuseConge'])
         ->middleware(['auth:api', 'role:ResponsableRh']);
 
     Route::get('result/{user_id}', [CongéController::class, 'getResultByUser'])
-        ->middleware(['auth:api', 'role:employee,chefProjet, agentRh']);
-    Route::get('attente', [CongéController::class, 'getCongeAttente'])
-        ->middleware(['auth:api', 'role:agentRh,ResponsableRh']);
+        ->middleware(['auth:api', 'role:employee,chefProjet']);
+    Route::get('resultAgentRH/{user_id}', [CongéController::class, 'getResultByUserAgentRh'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::get('responsable/attente', [CongéController::class, 'getCongeAttenteResponsable'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
 
-    Route::get('approve', [CongéController::class, 'getCongeApprove'])
-        ->middleware(['auth:api', 'role:agentRh,ResponsableRh']);
+    Route::get('responsable/acceptes', [CongéController::class, 'getCongeApproveResonsableRH'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
 
-    Route::get('refuse', [CongéController::class, 'getCongeRefuse'])
-        ->middleware(['auth:api', 'role:agentRh,ResponsableRh']);
+    Route::get('responsable/refuses', [CongéController::class, 'getCongeRefuseResponsableRH'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+
+    Route::get('agent/attente', [CongéController::class, 'getCongeAttenteAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+
+    Route::get('agent/acceptes', [CongéController::class, 'getCongeApproveAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+
+    Route::get('agent/refuses', [CongéController::class, 'getCongeRefuseAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+});
+// Projets
+Route::group(['prefix' => 'projets'], function () {
+
+    Route::get('get_projet', [ProjetController::class, 'index'])
+        ->middleware(['auth:api', 'role:employee,chefProjet']);
+
+    Route::get('get_projet/{id}', [ProjetController::class, 'getProjetById'])
+        ->middleware(['auth:api', 'role:employee,chefProjet']);
+
+    Route::post('add', [ProjetController::class, 'store'])
+        ->middleware(['auth:api', 'role:chefProjet']);
+
+    Route::put('update/{id}', [ProjetController::class, 'update'])
+        ->middleware(['auth:api', 'role:chefProjet']);
+
+    Route::delete('delete/{id}', [ProjetController::class, 'destroy'])
+        ->middleware(['auth:api', 'role:chefProjet']);
+
+    Route::get('search', [ProjetController::class, 'search'])
+        ->middleware(['auth:api', 'role:employee,chefProjet']);
+
+});
+Route::group(['prefix' => 'salaire'], function () {
+
+    Route::get('fiche-paie/{user_id}', [FichePaieController::class, 'getFcihePaiParUserid'])
+        ->middleware(['auth:api', 'role:agentRh,employee,chefProjet']);
+
+    Route::post('generer-fiche-paie/{user_id}', [AuthController::class, 'genererFichePaie'])
+        ->middleware(['auth:api', 'role:agentRh,employee,chefProjet']);
+
 });

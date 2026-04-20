@@ -6,10 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-
     public function up(): void
     {
-         Schema::create('users', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('nom');
             $table->string('prenom');
@@ -20,22 +19,20 @@ return new class extends Migration
             $table->string('photo')->nullable();
             $table->string('role')->default('employee');
             $table->string('code')->nullable();
-            //  $table->string('grade')->nullable();
-            $table->boolean('connecte')->default(false);
+
             $table->timestamp('session_ouverte')->nullable();
             $table->timestamp('session_fermee')->nullable();
             $table->double('prix_heure')->nullable();
             $table->double('salaire')->default(0);
             $table->double('nb_heure_par_jour')->nullable();
             $table->integer('nb_jour_conge')->default(21);
-            // $table->integer('heures_normales_par_jour')->default(8);
+
             $table->string('Contrat')->nullable();
             $table->boolean('status');
             $table->date('date_naissance');
-            $table->unsignedBigInteger('departement_id')->nullable();
-            $table->foreign('departement_id')->references('id')->on('departements');
-            // $table->boolean('first_login')->default(true);
 
+            $table->boolean('enConge')->default(false);
+            // $table->boolean('first_login')->default(true);
             $table->integer('jours_absence')->default(0);
             $table->integer('jours_presence')->default(0);
             $table->date('derniere_presence')->nullable();
@@ -43,9 +40,9 @@ return new class extends Migration
             $table->timestamps();
         });
     }
+
     public function down(): void
     {
         Schema::dropIfExists('users');
     }
 };
-

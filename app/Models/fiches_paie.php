@@ -5,17 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class departementTacheUser extends Model
+class fiches_paie extends Model
 {
     use HasFactory;
 
-    protected $table = 'notifications';
+    protected $table = 'fiches_paies';
 
     protected $fillable = [
-        'departement_id',
-        'tache_id',
         'user_id',
+        'file',
     ];
-
-    protected $hidden = ['created_at', 'updated_at'];
 }

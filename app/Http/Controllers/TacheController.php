@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Projet_tache_users;
+use App\Models\taches;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use App\Models\tache;
-use App\Models\User;
-use App\Models\departementTacheUser;
+use Illuminate\Support\Facades\Validator;
 
 class TacheController extends Controller
 {
-
     public function store(Request $request)
     {
 
@@ -20,17 +19,17 @@ class TacheController extends Controller
             'Description' => 'required|min:10',
             'DateDebut' => 'required|date',
             'DateFin' => 'required|date',
-            'departement_id' => 'required|array',
+            'projet_id' => 'required|exists:projets,id',
             'user_id' => 'required|array',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'error' => $validator->errors()
+                'error' => $validator->errors(),
             ], 401);
         }
 
-        $tache = new tache();
+        $tache = new taches;
 
         $tache->Nom = $request->Nom;
         $tache->Description = $request->Description;
@@ -40,78 +39,62 @@ class TacheController extends Controller
 
         $tache->save();
 
+        foreach ($request->user_id as $user) {
 
-        foreach ($request->departement_id as $dep) {
+            $pivot = new Projet_tache_users;
 
-            foreach ($request->user_id as $user) {
+            $pivot->projet_id = $request->projet_id;
+            $pivot->tache_id = $tache->id;
+            $pivot->user_id = $user;
 
-                $pivot = new departementTacheUser();
+            $pivot->save();
 
-                $pivot->departement_id = $dep;
-                $pivot->tache_id = $tache->id;
-                $pivot->user_id = $user;
-
-                $pivot->save();
-            }
         }
 
         return response()->json([
-            'message' => 'Tache created successfully'
+            'message' => 'Tache created successfully',
         ]);
     }
 
-
-    public function update(Request $request, $id)
+    public function updateStatus(Request $request, $id)
     {
+        $tache = taches::find($id);
 
-        $tache = tache::find($id);
-
-        if (!$tache) {
-            return response()->json(['message' => 'Tache not found'], 404);
+        if (! $tache) {
+            return response()->json([
+                'message' => 'Tache not found',
+            ], 404);
         }
 
-        $tache->Nom = $request->Nom;
-        $tache->Description = $request->Description;
-        $tache->DateDebut = $request->DateDebut;
-        $tache->DateFin = $request->DateFin;
-        $tache->status = $request->status;
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:incomplet,EnCours,complet',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors(),
+            ], 422);
+        }
+
+        $tache->status = $request->status;
         $tache->save();
 
-
-        DB::table('departement_tache_users')
-            ->where('tache_id', $id)
-            ->delete();
-
-
-        foreach ($request->departement_id as $dep) {
-
-            foreach ($request->user_id as $user) {
-
-                departementTacheUser::create([
-                    'departement_id' => $dep,
-                    'tache_id' => $id,
-                    'user_id' => $user
-                ]);
-            }
-        }
-
         return response()->json([
-            'message' => 'Tache updated successfully'
-        ]);
+            'message' => 'Status updated successfully',
+            'data' => $tache,
+        ], 200);
     }
-
 
     public function getDataById($id)
     {
 
         $data = DB::table('taches')
 
-            ->join('departement_tache_users', 'taches.id', '=', 'departement_tache_users.tache_id')
+            ->join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
 
-            ->join('departements', 'departements.id', '=', 'departement_tache_users.departement_id')
+            ->join('projets', 'projets.id', '=', 'projet_tache_users.projet_id')
 
-            ->join('users', 'users.id', '=', 'departement_tache_users.user_id')
+            ->join('users', 'users.id', '=', 'projet_tache_users.user_id')
 
             ->select(
                 'taches.id',
@@ -120,7 +103,7 @@ class TacheController extends Controller
                 'taches.DateDebut',
                 'taches.DateFin',
                 'taches.status',
-                'departements.NomDepartement',
+                'projets.NomProjet',
                 'users.nom',
                 'users.prenom'
             )
@@ -132,34 +115,13 @@ class TacheController extends Controller
         return response()->json($data);
     }
 
-
-    public function destroy($id)
-    {
-
-        $tache = tache::find($id);
-
-        if (!$tache) {
-            return response()->json(['message' => 'Tache not found'], 404);
-        }
-
-        DB::table('departement_tache_users')
-            ->where('tache_id', $id)
-            ->delete();
-
-        $tache->delete();
-
-        return response()->json([
-            'message' => 'Tache deleted successfully'
-        ]);
-    }
-
     public function index()
     {
 
         $taches = DB::table('taches')
-            ->join('departement_tache_users', 'taches.id', '=', 'departement_tache_users.tache_id')
-            ->join('departements', 'departements.id', '=', 'departement_tache_users.departement_id')
-            ->join('users', 'users.id', '=', 'departement_tache_users.user_id')
+            ->join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
+            ->join('projets', 'projets.id', '=', 'projet_tache_users.projet_id')
+            ->join('users', 'users.id', '=', 'projet_tache_users.user_id')
 
             ->select(
                 'taches.id',
@@ -168,7 +130,7 @@ class TacheController extends Controller
                 'taches.DateDebut',
                 'taches.DateFin',
                 'taches.status',
-                'departements.NomDepartement',
+                'projets.NomProjet',
                 'users.nom',
                 'users.prenom'
             )
@@ -176,12 +138,24 @@ class TacheController extends Controller
 
             ->get();
 
-
         $result = [];
         $currentTache = null;
+        $today = Carbon::today();
 
         foreach ($taches as $tache) {
+            if (
+                $tache->status === 'EnCours' &&
+                (
+                    Carbon::parse($tache->DateFin)->isPast() ||
+                    Carbon::parse($tache->DateDebut)->isPast()
+                )
+            ) {
+                DB::table('taches')
+                    ->where('id', $tache->id)
+                    ->update(['status' => 'incomplet']);
 
+                $tache->status = 'incomplet';
+            }
             if ($currentTache === null || $currentTache['id'] !== $tache->id) {
 
                 if ($currentTache !== null) {
@@ -189,20 +163,17 @@ class TacheController extends Controller
                 }
 
                 $currentTache = [
-                    "id" => $tache->id,
-                    "Nom" => $tache->Nom,
-                    "Description" => $tache->Description,
-                    "DateDebut" => $tache->DateDebut,
-                    "DateFin" => $tache->DateFin,
-                    "status" => $tache->status,
-                    "departements" => [$tache->NomDepartement],
-                    "users" => [$tache->nom . ' ' . $tache->prenom],
-                ];
-            } else {
-
-                $currentTache["departements"][] = $tache->NomDepartement;
-                $currentTache["users"][] = $tache->nom . ' ' . $tache->prenom;
+                    'id' => $tache->id,
+                    'Nom' => $tache->Nom,
+                    'Description' => $tache->Description,
+                    'DateDebut' => $tache->DateDebut,
+                    'DateFin' => $tache->DateFin,
+                    'status' => $tache->status,
+                    'projet_id' => $tache->NomProjet,
+                    'users' => [$tache->nom.' '.$tache->prenom],                ];
             }
+            // $currentTache['users'][] = $tache->nom.' '.$tache->prenom;
+
         }
 
         if ($currentTache !== null) {
@@ -212,31 +183,73 @@ class TacheController extends Controller
         return $result;
     }
 
-   public function getEmployeeBydepartement($departement_id){
+    public function getTacheByUserId($user_id)
+    {
 
-        $employees = User::where('departement_id', $departement_id)->where('role', 'employee')->get();
-        if ($employees->isEmpty()) {
-                return response()->json([
-                    'message' => 'Aucun employé trouvé dans ce département'
-                ], 404);
-            }
-            return response()->json([
-                'departement_id' => $departement_id,
-                'employees' => $employees
-            ], 200);
-}
-
-public function getTacheByUserId($user_id){
-
-        $tache = tache::join('departement_tache_users', 'taches.id', '=', 'departement_tache_users.tache_id')
-            ->join('departements', 'departement_tache_users.departement_id', '=', 'departements.id')
-            ->join('users', 'departements.id', '=', 'users.departement_id')
-            ->select('taches.*', 'departements.NomDepartement')
+        $tache = taches::join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
+            ->join('projets', 'projet_tache_users.projet_id', '=', 'projets.id')
+            ->join('users', 'projet_tache_users.user_id', '=', 'users.id')->select('taches.*', 'projets.NomProjet as projet_id ')
             ->where('users.id', '=', $user_id)
             ->get();
 
         return $tache;
     }
 
+    public function getTacheByProjetId($projet_id)
+    {
+        $rows = DB::table('taches')
+            ->join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
+            ->join('projets', 'projet_tache_users.projet_id', '=', 'projets.id')
+            ->join('users', 'projet_tache_users.user_id', '=', 'users.id')
+            ->select(
+                'taches.id',
+                'taches.Nom',
+                'taches.Description',
+                'taches.DateDebut',
+                'taches.DateFin',
+                'taches.status',
+                'projets.NomProjet',
+                'users.nom',
+                'users.prenom'
+            )
+            ->where('projets.id', $projet_id)
+            ->get();
 
+        $result = [];
+
+        foreach ($rows as $row) {
+
+            if (! isset($result[$row->id])) {
+                $result[$row->id] = [
+                    'id' => $row->id,
+                    'Nom' => $row->Nom,
+                    'Description' => $row->Description,
+                    'DateDebut' => $row->DateDebut,
+                    'DateFin' => $row->DateFin,
+                    'status' => $row->status,
+                    'projet' => $row->NomProjet,
+                    'users' => [],
+                ];
+            }
+
+            $result[$row->id]['users'][] = [
+                'nom' => $row->nom,
+                'prenom' => $row->prenom,
+            ];
+        }
+
+        return array_values($result);
+    }
+
+    public function getEmployeeNonCongé()
+    {
+        $users = DB::table('users')
+            ->where('role', 'employee')
+            ->where('enConge', false)
+            ->select('*')
+            ->get();
+
+        return response()->json($users);
+
+    }
 }

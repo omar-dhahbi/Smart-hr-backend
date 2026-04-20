@@ -11,18 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('congés', function (Blueprint $table) {
+        Schema::create('projet_tache_users', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('projet_id');
+            $table->foreign('projet_id')->references('id')->on('projets');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
-            $table->string('type');
-            $table->date('dateDebut');
-            $table->date('dateFin');
-            $table->integer('nbrJour');
-            $table->string('photo')->nullable();
-            $table->string('cause')->nullable();
-            $table->string('status')->nullable();
-            $table->string('status2')->default('attente');
+            $table->unsignedBigInteger('tache_id');
+            $table->foreign('tache_id')->references('id')->on('taches');
 
             $table->timestamps();
         });
@@ -33,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('congés');
+        Schema::dropIfExists('projet_tache_users');
     }
 };
