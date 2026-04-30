@@ -188,7 +188,7 @@ class TacheController extends Controller
 
         $tache = taches::join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
             ->join('projets', 'projet_tache_users.projet_id', '=', 'projets.id')
-            ->join('users', 'projet_tache_users.user_id', '=', 'users.id')->select('taches.*', 'projets.NomProjet as projet_id ')
+            ->join('users', 'projet_tache_users.user_id', '=', 'users.id')->select('taches.*', 'projets.NomProjet as projet_id')
             ->where('users.id', '=', $user_id)
             ->get();
 

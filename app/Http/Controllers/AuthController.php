@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\Restarpasword;
 use App\Mail\SignupEmail;
 use App\Models\fiches_paie;
+use App\Models\sessions;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -24,10 +25,13 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'cin' => 'required|numeric|digits:8|unique:users,cin',
             'nom' => 'required|alpha',
             'prenom' => 'required|alpha',
             'email' => 'required|email|unique:users',
             'date_naissance' => 'required|date',
+            'Genre' => 'required|in:Male,female',
+
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -36,12 +40,15 @@ class AuthController extends Controller
         }
         $randomPassword = Str::random(6);
         $user = new User;
+        $user->cin = $request->cin;
+
         $user->nom = $request->nom;
         $user->prenom = $request->prenom;
         $user->email = $request->email;
         $user->password = Hash::make($randomPassword);
         $user->verif_email = false;
         $user->status = true;
+        $user->Genre = $request->Genre;
 
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
@@ -259,30 +266,34 @@ class AuthController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role !== 'employee' && $user->role !== 'agentRh' && $user->role !== 'chefProjet') {
-            return response()->json(['error' => 'user non utiliser'], 403);
+        if (! in_array($user->role, ['employee', 'agentRh', 'chefProjet'])) {
+            return response()->json(['error' => 'Utilisateur non autorisé'], 403);
         }
 
-        // Vérifier si session déjà ouverte
-        if ($user->session_ouverte && ! $user->session_fermee) {
+        $existing = sessions::where('user_id', $user->id)
+            ->whereNull('heure_sortie')
+            ->latest()
+            ->first();
+
+        if ($existing) {
             return response()->json(['error' => 'Session déjà ouverte'], 400);
         }
 
         $now = Carbon::now();
 
         $heureDebut = Carbon::today()->setTime(8, 0, 0);
-
         $heureTolerance = Carbon::today()->setTime(8, 15, 0);
 
         if ($now->lessThanOrEqualTo($heureTolerance)) {
-            $user->session_ouverte = $heureDebut;
+            $heureEntree = $heureDebut;
         } else {
-            $user->session_ouverte = $now;
+            $heureEntree = $now;
         }
 
+        $user->session_ouverte = $heureEntree;
         $user->session_fermee = null;
 
-        $today = now()->toDateString();
+        $today = $now;
 
         if ($user->derniere_presence !== $today) {
             $user->jours_presence += 1;
@@ -291,9 +302,15 @@ class AuthController extends Controller
 
         $user->save();
 
+        sessions::create([
+            'user_id' => $user->id,
+            'heure_entree' => $heureEntree,
+            'date' => $today,
+        ]);
+
         return response()->json([
             'message' => 'Session ouverte avec succès',
-            'heure_debut' => $user->session_ouverte,
+            'heure_entree' => $heureEntree->format('Y-m-d H:i:s'),
         ]);
     }
 
@@ -301,25 +318,26 @@ class AuthController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->session_ouverte) {
+        $session = sessions::where('user_id', $user->id)
+            ->whereNull('heure_sortie')
+            ->latest()
+            ->first();
+
+        if (! $session) {
             return response()->json(['error' => 'Aucune session ouverte'], 400);
         }
 
-        if ($user->session_fermee) {
-            return response()->json(['error' => 'Session déjà fermée'], 400);
-        }
-
         $now = Carbon::now();
-
         $heureMax = Carbon::today()->setTime(17, 15, 0);
 
-        $user->session_fermee = $now->greaterThan($heureMax) ? $heureMax : $now;
+        $heureSortie = $now->greaterThan($heureMax) ? $heureMax : $now;
 
-        $debut = Carbon::parse($user->session_ouverte);
-        $fin = Carbon::parse($user->session_fermee);
+        $debut = Carbon::parse($session->heure_entree);
+        $fin = Carbon::parse($heureSortie);
 
         $minutes = $debut->diffInMinutes($fin);
 
+        // pause déjeuner
         $pauseStart = Carbon::today()->setTime(12, 0, 0);
         $pauseEnd = Carbon::today()->setTime(13, 0, 0);
 
@@ -332,13 +350,17 @@ class AuthController extends Controller
 
         $heures = round($minutes / 60, 2);
 
+        $gain = ($user->prix_heure ?? 0) * $heures;
+
+        $session->update([
+            'heure_sortie' => $heureSortie,
+            'nb_heures' => $heures,
+            'gain' => $gain,
+        ]);
+
+        $user->session_fermee = $heureSortie;
         $user->nb_heure_par_jour = $heures;
-
-        $gain = $user->prix_heure * $heures;
-        $user->salaire += $gain;
-
-        $user->derniere_presence = now()->toDateString();
-
+        $user->salaire = $user->salaire + $gain;
         $user->save();
 
         return response()->json([
@@ -358,20 +380,20 @@ class AuthController extends Controller
 
         return response()->json([
             'en_pause' => $now->between($pauseStart, $pauseEnd),
-            'heure_actuelle' => $now,
+            'heure_actuelle' => $now->toDateTimeString(),
         ]);
     }
 
-    public function absenceEmployee($id)
-    {
-        $user = User::find($id);
+    // public function absenceEmployee($id)
+    // {
+    //     $user = User::find($id);
 
-        return response()->json([
-            'nom' => $user->nom,
-            'absence' => $user->jours_absence,
-            'presence' => $user->jours_presence,
-        ]);
-    }
+    //     return response()->json([
+    //         'nom' => $user->nom,
+    //         'absence' => $user->jours_absence,
+    //         'presence' => $user->jours_presence,
+    //     ]);
+    // }
 
     public function updatePassword1(Request $request, $id)
     {
@@ -447,16 +469,34 @@ class AuthController extends Controller
     {
         $user = auth()->user();
 
+        $session = sessions::where('user_id', $user->id)
+            ->latest()
+            ->first();
+
+        $session_ouverte = null;
+        $session_fermee = null;
+        $en_cours = false;
+        if ($session) {
+            $session_ouverte = $session->heure_entree;
+            if ($session->heure_sortie) {
+                $session_fermee = $session->heure_sortie;
+                $en_cours = false;
+            } else {
+                $session_fermee = null;
+                $en_cours = true;
+            }
+        }
+
         return response()->json([
-            'session_ouverte' => $user->session_ouverte,
-            'session_fermee' => $user->session_fermee,
+            'session_ouverte' => $session_ouverte,
+            'session_fermee' => $session_fermee,
+            'en_cours' => $en_cours,
         ]);
     }
 
     public function searchUser(Request $request)
     {
         $query = $request->input('search');
-
         $users = User::where('nom', 'like', "%$query%")
             ->orWhere('prenom', 'like', "%$query%")
             ->orWhere('email', 'like', "%$query%")
@@ -473,23 +513,19 @@ class AuthController extends Controller
         if (! $user) {
             return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
-
-        if (! in_array($user->role, ['employee', 'chefProjet'])) {
+        if (! in_array($user->role, ['employee', 'chefProjet', 'agentRh'])) {
             return response()->json(['error' => 'Rôle invalide'], 403);
         }
-
         $now = Carbon::now();
-
-        // éviter doublon fiche paie par mois
         $existing = fiches_paie::where('user_id', $user->id)
             ->whereYear('created_at', $now->year)
             ->whereMonth('created_at', $now->month)
             ->first();
-
         if ($existing) {
             return response()->json([
                 'error' => 'Fiche déjà générée ce mois',
-            ]);
+            ], 400);
+
         }
         $data = [
             'nom' => $user->nom,
@@ -500,11 +536,9 @@ class AuthController extends Controller
             'date' => now()->format('Y-m-d'),
         ];
         $pdf = PDF::loadView('pdf.fiche_paie', $data);
-
         if (! file_exists(public_path('fiches'))) {
             mkdir(public_path('fiches'), 0777, true);
         }
-
         $fileName = 'fiche_'.$user->id.'_'.now()->format('YmdHis').'.pdf';
         $path = 'fiches/'.$fileName;
 
@@ -529,5 +563,71 @@ class AuthController extends Controller
             ->get();
 
         return response()->json($fiches);
+    }
+
+    public function historiquePointage($date)
+    {
+        $query = sessions::join('users', 'sessions.user_id', '=', 'users.id')
+            ->whereIn('users.role', ['employee', 'agentRh', 'chefProjet'])
+            ->whereDate('sessions.date', $date)
+            ->select(
+                'users.id',
+                'users.nom',
+                'users.prenom',
+                'users.role',
+                'users.photo',
+                'sessions.heure_entree',
+                'sessions.heure_sortie',
+                'sessions.nb_heures',
+                'sessions.date'
+            )
+            ->orderBy('sessions.date', 'desc');
+
+        $data = $query->get();
+
+        return response()->json($data);
+    }
+
+    public function historiquePointageAgentRH($date)
+    {
+        $query = sessions::join('users', 'sessions.user_id', '=', 'users.id')
+            ->whereIn('users.role', ['employee', 'chefProjet'])
+            ->whereDate('sessions.date', $date)
+            ->select(
+                'users.id',
+                'users.nom',
+                'users.prenom',
+                'users.role',
+                'users.photo',
+                'sessions.heure_entree',
+                'sessions.heure_sortie',
+                'sessions.nb_heures',
+                'sessions.date'
+            )
+            ->orderBy('sessions.date', 'desc');
+
+        $data = $query->get();
+
+        return response()->json($data);
+    }
+
+    public function historiquePointageByUser($id)
+    {
+        $data = sessions::join('users', 'sessions.user_id', '=', 'users.id')
+            ->where('users.id', $id)
+            ->select(
+                'users.id',
+                'users.nom',
+                'users.prenom',
+                'users.photo',
+                'sessions.heure_entree',
+                'sessions.heure_sortie',
+                'sessions.nb_heures',
+                'sessions.date'
+            )
+            ->orderBy('sessions.date', 'desc')
+            ->get();
+
+        return response()->json($data);
     }
 }

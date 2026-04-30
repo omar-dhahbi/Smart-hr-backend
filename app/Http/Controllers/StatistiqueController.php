@@ -104,7 +104,7 @@ class StatistiqueController extends Controller
     public function EmployeesPresentListRH()
     {
         $today = date('Y-m-d');
-        $users = User::whereIn('role', ['employee', 'ChefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo']);
+        $users = User::whereIn('role', ['employee', 'ChefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo', 'session_ouverte', 'session_fermee']);
 
         return response()->json($users);
     }
@@ -112,7 +112,7 @@ class StatistiqueController extends Controller
     public function EmployeesPresentList()
     {
         $today = date('Y-m-d');
-        $users = $users = User::whereIn('role', ['employee', 'agentRh', 'chefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo']);
+        $users = $users = User::whereIn('role', ['employee', 'agentRh', 'chefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo', 'session_ouverte', 'session_fermee']);
 
         return response()->json($users);
     }
@@ -184,5 +184,4 @@ class StatistiqueController extends Controller
             'employees' => $absents,
         ]);
     }
-
 }

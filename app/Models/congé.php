@@ -11,8 +11,8 @@ class congé extends Model
      protected $table = "congés";
     protected $fillable = ['user_id', 'type', 'dateDebut', 'dateFin', 'nbrJour', 'photo', 'cause', 'status', 'enCongé'];
     protected $hidden = ['created_at', 'updated_at'];
-       public function User()
-    {
-        return $this->hasMany(User::class);
-    }
+    //    public function User()
+    // {
+    //     return $this->hasMany(User::class);
+    // }
 }
