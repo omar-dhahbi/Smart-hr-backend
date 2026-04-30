@@ -10,6 +10,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('cin')->unique();
+
             $table->string('nom');
             $table->string('prenom');
             $table->string('email')->unique();
@@ -19,16 +21,16 @@ return new class extends Migration
             $table->string('photo')->nullable();
             $table->string('role')->default('employee');
             $table->string('code')->nullable();
-
             $table->timestamp('session_ouverte')->nullable();
             $table->timestamp('session_fermee')->nullable();
             $table->double('prix_heure')->nullable();
             $table->double('salaire')->default(0);
             $table->double('nb_heure_par_jour')->nullable();
             $table->integer('nb_jour_conge')->default(21);
-
             $table->string('Contrat')->nullable();
             $table->boolean('status');
+            $table->string('Genre');
+
             $table->date('date_naissance');
 
             $table->boolean('enConge')->default(false);

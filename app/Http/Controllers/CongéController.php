@@ -144,8 +144,6 @@ class CongéController extends Controller
         ], 201);
     }
 
-    // Pré-acceptation/refus par Agent RH
-    // Pré-acceptation
     public function preApproveConge($id)
     {
         $conge = congé::find($id);
@@ -311,7 +309,6 @@ class CongéController extends Controller
                         ->where('congés.status2', 'attente');
                 })
 
-                // agentRH → direct
                     ->orWhere(function ($q) {
                         $q->where('users.role', 'agentRh')
                             ->where('congés.status2', 'attente');
@@ -358,7 +355,6 @@ class CongéController extends Controller
         return response()->json($conges);
     }
 
-    // Récupérer les congés par utilisateur
     public function getResultByUser($user_id)
     {
         $conges = congé::where('user_id', $user_id)
@@ -411,7 +407,8 @@ class CongéController extends Controller
         return response()->json($conges);
     }
 
-    // Récupérer congés par statut pour Agent RH
+
+
     public function getCongeAttenteAgentRH()
     {
         $conges = congé::where('congés.status', 'attente')
@@ -428,8 +425,6 @@ class CongéController extends Controller
             ->get();
 
         foreach ($conges as $c) {
-
-            // 🔥 SI dateDebut dépassée => refusé automatiquement
             if (
                 $c->status === 'attente' &&
                 Carbon::parse($c->dateDebut)->isPast()

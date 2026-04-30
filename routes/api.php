@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AvanceSalireController;
 use App\Http\Controllers\CongéController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjetController;
@@ -36,6 +37,11 @@ Route::group(['prefix' => 'auth'], function () {
     Route::get('session-status', [AuthController::class, 'getSessionStatus'])->middleware(['auth:api', 'role:employee,agentRh,chefProjet']);
     Route::get('search', [AuthController::class, 'searchUser'])
         ->middleware(['auth:api', 'role:admin,ResponsableRh,agentRh']);
+    Route::get('historique-pointage/{date}', [AuthController::class, 'historiquePointage'])->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::get('historique-pointage-user/{id}', [AuthController::class, 'historiquePointageByUser'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::get('historique-pointageAgent/{date}', [AuthController::class, 'historiquePointageAgentRH'])->middleware(['auth:api', 'role:agentRh']);
+
 });
 
 // Statistiques
@@ -99,7 +105,7 @@ Route::group(['prefix' => 'conges'], function () {
         ->middleware(['auth:api', 'role:ResponsableRh']);
 
     Route::get('result/{user_id}', [CongéController::class, 'getResultByUser'])
-        ->middleware(['auth:api', 'role:employee,chefProjet']);
+        ->middleware(['auth:api', 'role:employee,chefProjet,agentRh']);
     Route::get('resultAgentRH/{user_id}', [CongéController::class, 'getResultByUserAgentRh'])
         ->middleware(['auth:api', 'role:agentRh']);
     Route::get('responsable/attente', [CongéController::class, 'getCongeAttenteResponsable'])
@@ -144,10 +150,39 @@ Route::group(['prefix' => 'projets'], function () {
 });
 Route::group(['prefix' => 'salaire'], function () {
 
-    Route::get('fiche-paie/{user_id}', [FichePaieController::class, 'getFcihePaiParUserid'])
+    Route::get('fiche-paie/{user_id}', [AuthController::class, 'getFcihePaiParUserid'])
         ->middleware(['auth:api', 'role:agentRh,employee,chefProjet']);
 
     Route::post('generer-fiche-paie/{user_id}', [AuthController::class, 'genererFichePaie'])
         ->middleware(['auth:api', 'role:agentRh,employee,chefProjet']);
+});
 
+Route::group(['prefix' => 'avance-salaire'], function () {
+    Route::post('demande', [AvanceSalireController::class, 'demandeAvance'])
+        ->middleware(['auth:api', 'role:employee,chefProjet']);
+    Route::post('demandeAgent', [AvanceSalireController::class, 'AvanceSalaireAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::put('pre-approve/{id}', [AvanceSalireController::class, 'preApprove'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::put('pre-refuse/{id}', [AvanceSalireController::class, 'preRefuse'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::put('final-approve/{id}', [AvanceSalireController::class, 'finalApprove'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::put('final-refuse/{id}', [AvanceSalireController::class, 'finalRefuse'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::get('attenteResponsable', [AvanceSalireController::class, 'getAvanceAttenteResponsable'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::get('acceptesResponsable', [AvanceSalireController::class, 'getAvanceApproveResponsable'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::get('refusesResponsable', [AvanceSalireController::class, 'getAvanceRefuseResponsable'])
+        ->middleware(['auth:api', 'role:ResponsableRh']);
+    Route::get('attente', [AvanceSalireController::class, 'getAvanceAttenteAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::get('acceptes', [AvanceSalireController::class, 'getAvanceApproveAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::get('refuses', [AvanceSalireController::class, 'getAvanceRefuseAgentRH'])
+        ->middleware(['auth:api', 'role:agentRh']);
+    Route::get('user/{user_id}', [AvanceSalireController::class, 'getResultByUser'])
+        ->middleware(['auth:api', 'role:employee,chefProjet']);
+    Route::get('resultAgentRH/{user_id}', [AvanceSalireController::class, 'getResultByUserAgentRh']);
 });
