@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('cin')->unique();
+            $table->string('cin')->unique()->nullable();
 
             $table->string('nom');
             $table->string('prenom');
@@ -29,8 +29,7 @@ return new class extends Migration
             $table->integer('nb_jour_conge')->default(21);
             $table->string('Contrat')->nullable();
             $table->boolean('status');
-            $table->string('Genre');
-
+            $table->string('Genre')->nullable();
             $table->date('date_naissance');
 
             $table->boolean('enConge')->default(false);

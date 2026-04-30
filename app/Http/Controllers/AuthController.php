@@ -30,7 +30,7 @@ class AuthController extends Controller
             'prenom' => 'required|alpha',
             'email' => 'required|email|unique:users',
             'date_naissance' => 'required|date',
-            'Genre' => 'required|in:Male,female',
+            'Genre' => 'required|in:Male,Female',
 
         ]);
         if ($validator->fails()) {
@@ -66,9 +66,6 @@ class AuthController extends Controller
         }
         $user->prix_heure = $request->prix_heure;
         $user->role = $request->role;
-        // $user->departement_id = $request->departement_id;
-
-        // $user->grade = $request->grade;
         $user->save();
         $details = [
             'title' => 'Vérification de votre compte',
