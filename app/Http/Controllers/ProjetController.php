@@ -29,7 +29,7 @@ class ProjetController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'NomProjet' => 'required|unique:projets,NomProjet|min:2|string',
-            'Description' => 'required|min:5|alpha',
+            'Description' => 'required|min:5',
         ]);
 
         if ($validator->fails()) {
@@ -60,11 +60,12 @@ class ProjetController extends Controller
 
     public function destroy($id)
     {
-         $Projets = Projets::find($id);
+        $Projets = Projets::find($id);
         if (is_null($Projets)) {
             return response()->json(['message' => 'Projet not found']);
         }
         $Projets->delete();
+
         return response()->json(['message' => 'Projets deleted']);
     }
 

@@ -41,7 +41,6 @@ class AuthController extends Controller
         $randomPassword = Str::random(6);
         $user = new User;
         $user->cin = $request->cin;
-
         $user->nom = $request->nom;
         $user->prenom = $request->prenom;
         $user->email = $request->email;

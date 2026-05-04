@@ -17,3 +17,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Docker volumes / runtime files
+Volumes/
+*.sock

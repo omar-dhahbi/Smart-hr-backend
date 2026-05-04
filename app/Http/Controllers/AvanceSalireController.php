@@ -6,7 +6,6 @@ use App\Models\AvanceSalire;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Validator;
 
 class AvanceSalireController extends Controller
@@ -215,42 +214,76 @@ class AvanceSalireController extends Controller
         return AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
             ->where('avance_salires.status', 'attente')
             ->whereIn('users.role', ['employee', 'chefProjet'])
-            ->select('avance_salires.*', 'users.nom', 'users.prenom')
+            ->select('avance_salires.*', 'users.nom', 'users.prenom', 'users.photo')
             ->orderBy('avance_salires.id', 'desc')
             ->get();
     }
 
     public function getAvanceApproveAgentRH()
     {
-        return AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
-            ->where('avance_salires.status', 'accepté')
-            ->orWhere('avance_salires.status2', 'accepté')
-            ->select('avance_salires.*', 'users.nom', 'users.prenom')
+        $avances = AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
+            ->select('avance_salires.*', 'users.nom', 'users.prenom', 'users.photo')
             ->orderBy('avance_salires.id', 'desc')
             ->get();
+
+        foreach ($avances as $a) {
+            if ($a->status == 'accepté' || $a->status2 == 'accepté') {
+                $a->resultat = 'accepté';
+            } elseif ($a->status == 'refusé' || $a->status2 == 'refusé') {
+                $a->resultat = 'refusé';
+            } else {
+                $a->resultat = 'attente';
+            }
+        }
+
+        return response()->json(
+            $avances->where('resultat', 'accepté')->values()
+        );
     }
 
     public function getAvanceRefuseAgentRH()
     {
-        return AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
-            ->where('avance_salires.status2', 'refusé')
-            ->orWhere('avance_salires.status', 'refusé')
-            ->select('avance_salires.*', 'users.nom', 'users.prenom')
+        $avances = AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
+            ->select('avance_salires.*', 'users.nom', 'users.prenom', 'users.photo')
             ->orderBy('avance_salires.id', 'desc')
             ->get();
+
+        foreach ($avances as $a) {
+            if ($a->status == 'refusé' || $a->status2 == 'refusé') {
+                $a->resultat = 'refusé';
+            } elseif ($a->status == 'accepté' && $a->status2 == 'accepté') {
+                $a->resultat = 'accepté';
+            } else {
+                $a->resultat = 'attente';
+            }
+        }
+
+        return response()->json(
+            $avances->where('resultat', 'refusé')->values()
+        );
     }
 
     public function getAvanceApproveResponsable()
     {
-        return AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
-            ->where('avance_salires.status2', 'accepté')
-            ->select('avance_salires.*', 'users.nom', 'users.prenom')
+        $data = AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
+            ->select('avance_salires.*', 'users.nom', 'users.prenom', 'users.photo')
+            ->orderBy('avance_salires.id', 'desc')
             ->get();
+
+        foreach ($data as $a) {
+            if ($a->status2 == 'accepté' && $a->status == 'accepté') {
+                $a->resultat = 'accepté';
+            }
+        }
+
+        return response()->json(
+            $data->where('resultat', 'accepté')->values()
+        );
     }
 
     public function getAvanceAttenteResponsable()
     {
-        $data = AvanceSalaire::join('users', 'users.id', '=', 'avance_salires.user_id')
+        $data = AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
             ->select(
                 'avance_salires.*',
                 'users.id as user_id',
@@ -271,18 +304,27 @@ class AvanceSalireController extends Controller
                     });
 
             })
-            ->orderBy('avance_salires.id', 'desc')
-            ->get();
+            ->orderBy('avance_salires.id', 'desc')->get();
 
         return response()->json($data);
     }
 
     public function getAvanceRefuseResponsable()
     {
-        return AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
-            ->where('avance_salires.status2', 'refusé')
-            ->select('avance_salires.*', 'users.nom', 'users.prenom')
+        $data = AvanceSalire::join('users', 'users.id', '=', 'avance_salires.user_id')
+            ->select('avance_salires.*', 'users.nom', 'users.prenom', 'users.photo')
+            ->orderBy('avance_salires.id', 'desc')
             ->get();
+
+        foreach ($data as $a) {
+            if ($a->status == 'refusé' || $a->status2 == 'refusé') {
+                $a->resultat = 'refusé';
+            }
+        }
+
+        return response()->json(
+            $data->where('resultat', 'refusé')->values()
+        );
     }
 
     public function getResultByUser($user_id)
