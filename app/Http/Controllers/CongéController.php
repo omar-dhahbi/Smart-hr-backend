@@ -20,23 +20,17 @@ class CongéController extends Controller
             'dateFin' => 'required|date',
             'nbrJour' => 'required|integer',
         ]);
-
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
-
         $user = User::find($request->user_id);
 
-        $exists = congé::where('user_id', $request->user_id)
+        $lastRequest = congé::where('user_id', $request->user_id)
             ->where('created_at', '>=', now()->subDay())
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'error' => 'Vous avez déjà soumis une demande de congé dans les dernières 24h.',
-            ], 409);
+            ->first();
+        if (! empty($lastRequest)) {
+            return response()->json(['error' => 'Vous avez déjà soumis une demande de congé au cours des dernières 24 heures.'], 404);
         }
-
         $conge = new congé;
         $conge->user_id = $request->user_id;
         $conge->type = $request->type;
@@ -51,18 +45,14 @@ class CongéController extends Controller
             $file->move(public_path('images'), $filename);
             $conge->photo = 'images/'.$filename;
         }
-
         $conge->status = 'attente';
         $conge->status2 = 'attente';
         $conge->save();
-
         if ($user) {
             $user->enConge = false;
             $user->save();
         }
-
         $receivers = User::where('role', 'agentRh')->get();
-
         foreach ($receivers as $r) {
             Notification::create([
                 'user_id' => $r->id,
@@ -96,15 +86,11 @@ class CongéController extends Controller
             return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
-        // check 24h
-        $exists = congé::where('user_id', $request->user_id)
+        $lastRequest = congé::where('user_id', $request->user_id)
             ->where('created_at', '>=', now()->subDay())
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'error' => 'Vous avez déjà soumis une demande dans les dernières 24h.',
-            ], 409);
+            ->first();
+        if (! empty($lastRequest)) {
+            return response()->json(['error' => 'Vous avez déjà soumis une demande de congé au cours des dernières 24 heures.'], 404);
         }
 
         $conge = new congé;
@@ -302,7 +288,6 @@ class CongéController extends Controller
                 'users.nb_jour_conge'
             )->where(function ($query) {
 
-                // employee / chefProjet → après validation agentRH
                 $query->where(function ($q) {
                     $q->whereIn('users.role', ['employee', 'chefProjet'])
                         ->where('congés.status', 'accepté')
@@ -321,7 +306,7 @@ class CongéController extends Controller
         return response()->json($conges);
     }
 
-    public function getCongeApproveResonsableRH(Request $request)
+    public function getCongeApproveResonsableRH()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
             ->select(
@@ -331,14 +316,24 @@ class CongéController extends Controller
                 'users.prenom',
                 'users.photo',
                 'users.nb_jour_conge'
-            )->where('congés.status2', 'accepté')
+            )
             ->orderBy('congés.id', 'desc')
             ->get();
 
-        return response()->json($conges);
+        foreach ($conges as $c) {
+            if ($c->status2 === 'accepté' && $c->status === 'accepté') {
+                $c->resultat = 'accepté';
+            } else {
+                $c->resultat = null;
+            }
+        }
+
+        return response()->json(
+            $conges->where('resultat', 'accepté')->values()
+        );
     }
 
-    public function getCongeRefuseResponsableRH(Request $request)
+    public function getCongeRefuseResponsableRH()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
             ->select(
@@ -348,11 +343,18 @@ class CongéController extends Controller
                 'users.prenom',
                 'users.photo',
                 'users.nb_jour_conge'
-            )->where('congés.status2', 'refusé')
+            )
             ->orderBy('congés.id', 'desc')
             ->get();
+        foreach ($conges as $c) {
+            if ($c->status == 'refusé' || $c->status2 == 'refusé') {
+                $c->resultat = 'refusé';
+            }
+        }
 
-        return response()->json($conges);
+        return response()->json(
+            $conges->where('resultat', 'refusé')->values()
+        );
     }
 
     public function getResultByUser($user_id)
@@ -407,8 +409,6 @@ class CongéController extends Controller
         return response()->json($conges);
     }
 
-
-
     public function getCongeAttenteAgentRH()
     {
         $conges = congé::where('congés.status', 'attente')
@@ -436,12 +436,28 @@ class CongéController extends Controller
         return response()->json($conges);
     }
 
+    // public function getCongeApproveAgentRH()
+    // {
+    //     $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
+    //         ->whereIn('users.role', ['chefProjet', 'employee'])
+    //         ->where('congés.status', 'accepté')
+    //         ->where('congés.status2', 'accepté')
+    //         ->select(
+    //             'congés.*',
+    //             'users.id as user_id',
+    //             'users.nom',
+    //             'users.prenom',
+    //             'users.photo',
+    //             'users.nb_jour_conge'
+    //         )->orderBy('congés.id', 'desc')
+    //         ->get();
+
+    //     return response()->json($conges);
+    // }
     public function getCongeApproveAgentRH()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
             ->whereIn('users.role', ['chefProjet', 'employee'])
-            ->where('congés.status', 'accepté')
-            ->where('congés.status2', 'accepté')
             ->select(
                 'congés.*',
                 'users.id as user_id',
@@ -449,18 +465,44 @@ class CongéController extends Controller
                 'users.prenom',
                 'users.photo',
                 'users.nb_jour_conge'
-            )->orderBy('congés.id', 'desc')
+            )
+            ->orderBy('congés.id', 'desc')
             ->get();
 
-        return response()->json($conges);
+        foreach ($conges as $c) {
+
+            if ($c->status === 'accepté' || $c->status2 === 'accepté') {
+                $c->resultat = 'accepté';
+            }
+        }
+
+        return response()->json(
+            $conges->where('resultat', 'accepté')->values()
+        );
     }
 
+    // public function getCongeRefuseAgentRH()
+    // {
+    //     $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
+    //         ->whereIn('users.role', ['chefProjet', 'employee'])
+    //         ->where('congés.status', 'refusé')
+    //         ->where('congés.status2', 'refusé')
+    //         ->select(
+    //             'congés.*',
+    //             'users.id as user_id',
+    //             'users.nom',
+    //             'users.prenom',
+    //             'users.photo',
+    //             'users.nb_jour_conge'
+    //         )->orderBy('congés.id', 'desc')
+    //         ->get();
+
+    //     return response()->json($conges);
+    // }
     public function getCongeRefuseAgentRH()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
             ->whereIn('users.role', ['chefProjet', 'employee'])
-            ->where('congés.status', 'refusé')
-            ->where('congés.status2', 'refusé')
             ->select(
                 'congés.*',
                 'users.id as user_id',
@@ -468,9 +510,20 @@ class CongéController extends Controller
                 'users.prenom',
                 'users.photo',
                 'users.nb_jour_conge'
-            )->orderBy('congés.id', 'desc')
+            )
+            ->orderBy('congés.id', 'desc')
             ->get();
 
-        return response()->json($conges);
+        foreach ($conges as $c) {
+
+            if ($c->status === 'refusé' || $c->status2 === 'refusé') {
+                $c->resultat = 'refusé';
+
+            }
+        }
+
+        return response()->json(
+            $conges->where('resultat', 'refusé')->values()
+        );
     }
 }
