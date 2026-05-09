@@ -23,7 +23,7 @@
                             <p><strong>Email:</strong> {{ $details['email'] }}</p>
                             <p><strong>Password:</strong> {{ $details['password'] }}</p>
                             <div style="margin-top: 30px; text-align: center;">
-                                <a href="http://localhost:4200/Verif/{{ $details['id'] }}"
+                                <a href="http://localhost:4201/Verif/{{ $details['id'] }}"
                                     style="display: inline-block; padding: 12px 24px; background-color:  #3F51B5;; color: white; text-decoration: none; border-radius: 5px;">
                                     Activer votre compte
                                 </a>
