@@ -25,10 +25,10 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'cin' => 'required|numeric|digits:8|unique:users,cin',
+            'cin' => 'required|numeric|digits:8',
             'nom' => 'required|alpha',
             'prenom' => 'required|alpha',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email',
             'date_naissance' => 'required|date',
             'Genre' => 'required|in:Male,Female',
 
@@ -36,6 +36,18 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'error' => $validator->errors(),
+            ], 401);
+        }
+
+        if (User::where('cin', $request->cin)->exists()) {
+            return response()->json([
+                'error' => 'cette Carte identité  est exist',
+            ], 401);
+        }
+
+        if (User::where('email', $request->email)->exists()) {
+            return response()->json([
+                'error' => 'Email est exist',
             ], 401);
         }
         $randomPassword = Str::random(6);

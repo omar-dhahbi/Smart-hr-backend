@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\congé;
 use App\Models\User;
+use Carbon\Carbon;
 
 class StatistiqueController extends Controller
 {
@@ -100,6 +102,7 @@ class StatistiqueController extends Controller
             'total' => $total,
         ]);
     }
+
     public function EmployeesPresentListRH()
     {
         $today = date('Y-m-d');
@@ -107,6 +110,7 @@ class StatistiqueController extends Controller
 
         return response()->json($users);
     }
+
     public function EmployeesPresentList()
     {
         $today = date('Y-m-d');

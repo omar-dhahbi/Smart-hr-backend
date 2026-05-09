@@ -284,6 +284,8 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
+                'users.role',
+
                 'users.photo',
                 'users.nb_jour_conge'
             )->where(function ($query) {
@@ -314,6 +316,8 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
+                'users.role',
+
                 'users.photo',
                 'users.nb_jour_conge'
             )
@@ -323,8 +327,9 @@ class CongéController extends Controller
         foreach ($conges as $c) {
             if ($c->status2 === 'accepté' && $c->status === 'accepté') {
                 $c->resultat = 'accepté';
-            } else {
-                $c->resultat = null;
+            } elseif ($c->status2 === 'accepté') {
+                $c->resultat = 'accepté';
+
             }
         }
 
@@ -341,6 +346,7 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
+                'users.role',
                 'users.photo',
                 'users.nb_jour_conge'
             )
@@ -419,6 +425,8 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
+                'users.role',
+
                 'users.photo',
                 'users.nb_jour_conge'
             )->orderBy('congés.id', 'desc')
@@ -463,6 +471,8 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
+                'users.role',
+
                 'users.photo',
                 'users.nb_jour_conge'
             )
@@ -508,6 +518,8 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
+                                'users.role',
+
                 'users.photo',
                 'users.nb_jour_conge'
             )
