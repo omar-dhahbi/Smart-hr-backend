@@ -490,25 +490,6 @@ class CongéController extends Controller
             $conges->where('resultat', 'accepté')->values()
         );
     }
-
-    // public function getCongeRefuseAgentRH()
-    // {
-    //     $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
-    //         ->whereIn('users.role', ['chefProjet', 'employee'])
-    //         ->where('congés.status', 'refusé')
-    //         ->where('congés.status2', 'refusé')
-    //         ->select(
-    //             'congés.*',
-    //             'users.id as user_id',
-    //             'users.nom',
-    //             'users.prenom',
-    //             'users.photo',
-    //             'users.nb_jour_conge'
-    //         )->orderBy('congés.id', 'desc')
-    //         ->get();
-
-    //     return response()->json($conges);
-    // }
     public function getCongeRefuseAgentRH()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')
@@ -518,7 +499,7 @@ class CongéController extends Controller
                 'users.id as user_id',
                 'users.nom',
                 'users.prenom',
-                                'users.role',
+                'users.role',
 
                 'users.photo',
                 'users.nb_jour_conge'
