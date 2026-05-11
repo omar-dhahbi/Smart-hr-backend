@@ -27,7 +27,7 @@ services:
     php:
         build:
             context: .
-            dockerfile: DockerFile
+            dockerfile: Dockerfile
         container_name: laravel_app
         ports:
             - "9000:9000"
