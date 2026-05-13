@@ -246,10 +246,11 @@ class TacheController extends Controller
         $users = DB::table('users')
             ->where('role', 'employee')
             ->where('enConge', false)
+            ->where('verif_email', true)
+            ->where('status', true)
             ->select('*')
             ->get();
 
         return response()->json($users);
-
     }
 }

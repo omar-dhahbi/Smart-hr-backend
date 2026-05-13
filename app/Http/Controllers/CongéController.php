@@ -143,7 +143,7 @@ class CongéController extends Controller
 
         $user = User::find($conge->user_id);
         if ($user) {
-            $user->enConge = true;
+            $user->enConge = false;
             $user->save();
         }
 
@@ -182,7 +182,6 @@ class CongéController extends Controller
             $user->enConge = false;
             $user->save();
         }
-
         Notification::create([
             'user_id' => $conge->user_id,
             'message' => 'Votre demande de congé a été refusée par Agent RH',
@@ -213,11 +212,21 @@ class CongéController extends Controller
 
         $user = User::find($conge->user_id);
         if ($user) {
-            $user->enConge = true;
+
+            $today = Carbon::today();
+
+            if (Carbon::parse($conge->dateFin)->lt($today)) {
+                $user->enConge = false;
+            } else {
+                $user->enConge = $today->between(
+                    Carbon::parse($conge->dateDebut),
+                    Carbon::parse($conge->dateFin)
+                );
+            }
+
             $user->nb_jour_conge -= $conge->nbrJour;
             $user->save();
         }
-
         Notification::create([
             'user_id' => $conge->user_id,
             'message' => 'Votre congé est accepté définitivement',
@@ -243,19 +252,14 @@ class CongéController extends Controller
         if (! $conge) {
             return response()->json(['error' => 'Congé non trouvé'], 404);
         }
-
-        // Mise à jour statut congé
         $conge->status2 = 'refusé';
         $conge->save();
 
-        // Récupérer utilisateur
         $user = User::find($conge->user_id);
         if ($user) {
             $user->enConge = false;
             $user->save();
         }
-
-        // Notification utilisateur
         Notification::create([
             'user_id' => $conge->user_id,
             'message' => 'Votre demande de congé a été refusée définitivement',
@@ -285,7 +289,6 @@ class CongéController extends Controller
                 'users.nom',
                 'users.prenom',
                 'users.role',
-
                 'users.photo',
                 'users.nb_jour_conge'
             )->where(function ($query) {
@@ -490,6 +493,7 @@ class CongéController extends Controller
             $conges->where('resultat', 'accepté')->values()
         );
     }
+
     public function getCongeRefuseAgentRH()
     {
         $conges = congé::join('users', 'users.id', '=', 'congés.user_id')

@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('cin')->unique()->nullable();
-
             $table->string('nom');
             $table->string('prenom');
             $table->string('email')->unique();
@@ -31,7 +30,6 @@ return new class extends Migration
             $table->boolean('status');
             $table->string('Genre')->nullable();
             $table->date('date_naissance');
-
             $table->boolean('enConge')->default(false);
             // $table->boolean('first_login')->default(true);
             $table->integer('jours_absence')->default(0);

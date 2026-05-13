@@ -227,7 +227,6 @@ class StatistiqueController extends Controller
             ->whereDate('congés.dateFin', '>=', $today)
             ->distinct('congés.user_id')
             ->count('congés.user_id');
-
         return response()->json([
             'date' => $today,
             'employee' => $count,
