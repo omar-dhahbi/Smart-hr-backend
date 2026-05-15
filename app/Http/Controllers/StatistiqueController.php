@@ -106,7 +106,7 @@ class StatistiqueController extends Controller
     public function EmployeesPresentListRH()
     {
         $today = date('Y-m-d');
-        $users = User::whereIn('role', ['employee', 'ChefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo', 'session_ouverte', 'session_fermee']);
+        $users = User::whereIn('role', ['employee', 'ChefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo', 'role', 'session_ouverte', 'session_fermee']);
 
         return response()->json($users);
     }
@@ -114,7 +114,7 @@ class StatistiqueController extends Controller
     public function EmployeesPresentList()
     {
         $today = date('Y-m-d');
-        $users = $users = User::whereIn('role', ['employee', 'agentRh', 'chefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo', 'session_ouverte', 'session_fermee']);
+        $users = $users = User::whereIn('role', ['employee', 'agentRh', 'chefProjet'])->whereDate('derniere_presence', $today)->get(['id', 'nom', 'prenom', 'photo', 'role', 'session_ouverte', 'session_fermee']);
 
         return response()->json($users);
     }
@@ -128,7 +128,7 @@ class StatistiqueController extends Controller
                 $query->whereNull('derniere_presence')
                     ->orWhereDate('derniere_presence', '!=', $today);
             })
-            ->get(['id', 'nom', 'prenom', 'photo']);
+            ->get(['id', 'nom', 'prenom', 'photo', 'role']);
 
         return response()->json($absents);
     }
@@ -142,7 +142,7 @@ class StatistiqueController extends Controller
                 $query->whereNull('derniere_presence')
                     ->orWhereDate('derniere_presence', '!=', $today);
             })
-            ->get(['id', 'nom', 'prenom', 'photo']);
+            ->get(['id', 'nom', 'prenom', 'photo', 'role']);
 
         return response()->json($absents);
     }
@@ -156,7 +156,7 @@ class StatistiqueController extends Controller
                 $query->whereNull('derniere_presence')
                     ->orWhereDate('derniere_presence', '!=', $today);
             })
-            ->get(['id', 'nom', 'prenom', 'photo']);
+            ->get(['id', 'nom', 'prenom', 'photo', 'role']);
         $total = User::whereIn('role', ['employee', 'ChefProjet'])->count();
         $countAbsent = $absents->count();
 
@@ -176,7 +176,7 @@ class StatistiqueController extends Controller
                 $query->whereNull('derniere_presence')
                     ->orWhereDate('derniere_presence', '!=', $today);
             })
-            ->get(['id', 'nom', 'prenom', 'photo']);
+            ->get(['id', 'nom', 'prenom', 'photo', 'role']);
         $total = User::whereIn('role', ['employee', 'agentRh', 'chefProjet'])->count();
         $countAbsent = $absents->count();
 
@@ -227,6 +227,7 @@ class StatistiqueController extends Controller
             ->whereDate('congés.dateFin', '>=', $today)
             ->distinct('congés.user_id')
             ->count('congés.user_id');
+
         return response()->json([
             'date' => $today,
             'employee' => $count,
@@ -246,7 +247,9 @@ class StatistiqueController extends Controller
                 'users.id',
                 'users.nom',
                 'users.prenom',
-                'users.photo'
+                'users.photo',
+                'users.role',
+
             )
             ->distinct()
             ->get();
@@ -270,7 +273,8 @@ class StatistiqueController extends Controller
                 'users.id',
                 'users.nom',
                 'users.prenom',
-                'users.photo'
+                'users.photo',
+                'users.role'
             )
             ->distinct()
             ->get();
