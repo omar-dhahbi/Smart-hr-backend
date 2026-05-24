@@ -23,9 +23,15 @@ class AvanceSalireController extends Controller
         }
 
         $user = User::find($request->user_id);
-        if ($request->SalaireAvance > $user->salaire) {
+        // if ($request->SalaireAvance >= $user->salaire) {
+        //     return response()->json([
+        //         'error' => 'Veuillez demander un montant inférieur à votre salaire.',
+        //     ], 422);
+        // }
+        $maxAvance = $user->salaire * 0.3;
+        if ($request->SalaireAvance > $maxAvance) {
             return response()->json([
-                'error' => 'Le montant demandé dépasse votre salaire actuel.',
+                'error' => "L'avance de salaire ne doit pas dépasser 30% du salaire ({$maxAvance}).",
             ], 422);
         }
 
@@ -178,6 +184,17 @@ class AvanceSalireController extends Controller
 
         $user = User::find($request->user_id);
 
+        // if ($request->SalaireAvance >= $user->salaire) {
+        //     return response()->json([
+        //         'error' => 'Veuillez demander un montant inférieur à votre salaire.',
+        //     ], 422);
+        // }
+        $maxAvance = $user->salaire * 0.3;
+        if ($request->SalaireAvance > $maxAvance) {
+            return response()->json([
+                'error' => "L'avance de salaire ne doit pas dépasser 30% du salaire ({$maxAvance}).",
+            ], 422);
+        }
         $exists = AvanceSalire::where('user_id', $request->user_id)
             ->where('created_at', '>=', now()->subDay())
             ->exists();
