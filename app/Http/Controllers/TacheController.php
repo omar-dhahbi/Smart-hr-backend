@@ -28,27 +28,21 @@ class TacheController extends Controller
                 'error' => $validator->errors(),
             ], 401);
         }
-
         $tache = new taches;
-
         $tache->Nom = $request->Nom;
         $tache->Description = $request->Description;
         $tache->DateDebut = $request->DateDebut;
         $tache->DateFin = $request->DateFin;
         $tache->status = $request->status ?? 'incomplet';
-
         $tache->save();
 
         foreach ($request->user_id as $user) {
 
             $pivot = new Projet_tache_users;
-
             $pivot->projet_id = $request->projet_id;
             $pivot->tache_id = $tache->id;
             $pivot->user_id = $user;
-
             $pivot->save();
-
         }
 
         return response()->json([
@@ -146,8 +140,7 @@ class TacheController extends Controller
             if (
                 $tache->status === 'EnCours' &&
                 (
-                    Carbon::parse($tache->DateFin)->isPast() ||
-                    Carbon::parse($tache->DateDebut)->isPast()
+                    Carbon::parse($tache->DateFin)->isPast()
                 )
             ) {
                 DB::table('taches')
@@ -170,7 +163,8 @@ class TacheController extends Controller
                     'DateFin' => $tache->DateFin,
                     'status' => $tache->status,
                     'projet_id' => $tache->NomProjet,
-                    'users' => [$tache->nom.' '.$tache->prenom],                ];
+                    'users' => [$tache->nom.' '.$tache->prenom],
+                ];
             }
             // $currentTache['users'][] = $tache->nom.' '.$tache->prenom;
 
@@ -210,7 +204,8 @@ class TacheController extends Controller
                 'taches.status',
                 'projets.NomProjet',
                 'users.nom',
-                'users.prenom'
+                'users.prenom',
+                'users.photo',
             )
             ->where('projets.id', $projet_id)
             ->get();
@@ -235,6 +230,7 @@ class TacheController extends Controller
             $result[$row->id]['users'][] = [
                 'nom' => $row->nom,
                 'prenom' => $row->prenom,
+                'photo' => $row->photo,
             ];
         }
 
@@ -252,5 +248,27 @@ class TacheController extends Controller
             ->get();
 
         return response()->json($users);
+    }
+
+    public function getEmployeByTache($tache_id)
+    {
+        $employees = DB::table('projet_tache_users')
+            ->join('users', 'projet_tache_users.user_id', '=', 'users.id')
+            ->join('taches', 'projet_tache_users.tache_id', '=', 'taches.id')
+
+            ->select(
+                'users.id',
+                'users.nom',
+                'users.prenom',
+                // 'users.email',
+                'users.photo',
+                'taches.Nom as nom_tache'
+            )
+
+            ->where('taches.id', $tache_id)
+
+            ->get();
+
+        return response()->json($employees);
     }
 }

@@ -326,7 +326,6 @@ class CongéController extends Controller
             )
             ->orderBy('congés.id', 'desc')
             ->get();
-
         foreach ($conges as $c) {
             if ($c->status2 === 'accepté' && $c->status === 'accepté') {
                 $c->resultat = 'accepté';

@@ -249,7 +249,8 @@ class StatistiqueController extends Controller
                 'users.prenom',
                 'users.photo',
                 'users.role',
-
+                'congés.dateDebut',
+                'congés.dateFin'
             )
             ->distinct()
             ->get();
@@ -274,7 +275,9 @@ class StatistiqueController extends Controller
                 'users.nom',
                 'users.prenom',
                 'users.photo',
-                'users.role'
+                'users.role',
+                'congés.dateDebut',
+                'congés.dateFin'
             )
             ->distinct()
             ->get();
