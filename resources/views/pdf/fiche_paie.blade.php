@@ -112,6 +112,7 @@
             font-size: 13px;
             color: #888;
         }
+
         .tampon {
             margin-top: 40px;
             display: flex;
@@ -194,12 +195,12 @@
             Total à payer : {{ $salaire }} DT
         </div>
 
-        <div class="tampon">
+        {{-- <div class="tampon">
             <div class="tampon-box">
                 Cachet & Signature<br>
                 RH / Entreprise
             </div>
-        </div>
+        </div> --}}
 
     </div>
 
