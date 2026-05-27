@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('taches', function (Blueprint $table) {
             $table->id();
-            $table->string('Nom')->unique();
+            $table->string('Nom');
             $table->string('Description')->unique();
             $table->date('DateDebut');
             $table->date('DateFin');

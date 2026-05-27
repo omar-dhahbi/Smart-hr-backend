@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -32,6 +31,8 @@ class AuthController extends Controller
             'email' => 'required|email',
             'date_naissance' => 'required|date',
             'Genre' => 'required|in:Male,Female',
+            // 'photo' => 'image|mimes:jpg,jpeg,png|max:2048',
+            // 'Contrat' => 'mimes:pdf|max:10240',
 
         ]);
         if ($validator->fails()) {
@@ -639,6 +640,4 @@ class AuthController extends Controller
 
         return response()->json($data);
     }
-
-
 }

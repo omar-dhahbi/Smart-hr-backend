@@ -75,7 +75,7 @@
         <div class="content">
             <p>Votre code : <span class="code">{{ $details['code'] }}</span> pour vérifier votre mot de passe.</p>
             <div class="button">
-                <a href="http://localhost:4201/ModifierMotPasse/{{ $details['id'] }}">Réinitialiser le mot de passe
+                <a href="http://192.168.1.50:4201/ModifierMotPasse/{{ $details['id'] }}">Réinitialiser le mot de passe
                 </a>
             </div>
         </div>

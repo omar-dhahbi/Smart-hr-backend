@@ -16,7 +16,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 Route::group(['prefix' => 'auth'], function () {
     Route::put('restarpasword/{email}', [AuthController::class, 'restarpassword']);
-    Route::post('register', [AuthController::class, 'register']);
+    Route::post('register', [AuthController::class, 'register'])->middleware(['auth:api', 'role:admin,ResponsableRh']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout'])->middleware(['auth:api', 'role:admin,employee,ResponsableRh,chefProjet,agentRh']);
     Route::put('updatepassword/{id}', [AuthController::class, 'updatepassword']);
@@ -67,13 +67,12 @@ Route::group(['prefix' => 'stat'], function () {
 Route::group(['prefix' => 'taches'], function () {
     Route::get('get_taches', [TacheController::class, 'index'])->middleware(['auth:api', 'role:chefProjet']);
     Route::get('get_tache/{id}', [TacheController::class, 'getDataById'])->middleware(['auth:api', 'role:chefProjet']);
-    Route::post('add_tache', [TacheController::class, 'store'])->middleware(['auth:api', 'role:chefProjet']);
+    Route::post('add_tache', [TacheController::class, 'store']);
     Route::put('update_status/{id}', [TacheController::class, 'updateStatus'])
         ->middleware(['auth:api', 'role:chefProjet,employee']);
     Route::get('getTacheByUser/{user_id}', [TacheController::class, 'getTacheByUserId'])->middleware(['auth:api', 'role:employee']);
     Route::get('getEmployeeNonCongé', [TacheController::class, 'getEmployeeNonCongé'])->middleware(['auth:api', 'role:chefProjet']);
-    Route::get('getTacheByProjet/{projet_id}', [TacheController::class, 'getTacheByProjetId'])
-       ;
+    Route::get('getTacheByProjet/{projet_id}', [TacheController::class, 'getTacheByProjetId']);
     Route::get('employees/{id}', [TacheController::class, 'getEmployeByTache'])->middleware(['auth:api', 'role:chefProjet']);
 });
 Route::group(['prefix' => 'notifications'], function () {

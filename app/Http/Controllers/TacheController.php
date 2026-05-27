@@ -109,14 +109,79 @@ class TacheController extends Controller
         return response()->json($data);
     }
 
+    // public function index()
+    // {
+
+    //     $taches = DB::table('taches')
+    //         ->join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
+    //         ->join('projets', 'projets.id', '=', 'projet_tache_users.projet_id')
+    //         ->join('users', 'users.id', '=', 'projet_tache_users.user_id')
+
+    //         ->select(
+    //             'taches.id',
+    //             'taches.Nom',
+    //             'taches.Description',
+    //             'taches.DateDebut',
+    //             'taches.DateFin',
+    //             'taches.status',
+    //             'projets.NomProjet',
+    //             'users.nom',
+    //             'users.prenom'
+    //         )
+    //         ->orderBy('taches.id')
+
+    //         ->get();
+
+    //     // $result = [];
+    //     // $currentTache = null;
+    //     $today = Carbon::today();
+
+    //     foreach ($taches as $tache) {
+    //         if (
+    //             $tache->status === 'EnCours' &&
+    //             (
+    //                 Carbon::parse($tache->DateFin)->isPast()
+    //             )
+    //         ) {
+    //             DB::table('taches')
+    //                 ->where('id', $tache->id)
+    //                 ->update(['status' => 'incomplet']);
+
+    //             $tache->status = 'incomplet';
+    //         }
+    //         //     if ($currentTache === null || $currentTache['id'] !== $tache->id) {
+
+    //         //         if ($currentTache !== null) {
+    //         //             $result[] = $currentTache;
+    //         //         }
+
+    //         //         $currentTache = [
+    //         //             'id' => $tache->id,
+    //         //             'Nom' => $tache->Nom,
+    //         //             'Description' => $tache->Description,
+    //         //             'DateDebut' => $tache->DateDebut,
+    //         //             'DateFin' => $tache->DateFin,
+    //         //             'status' => $tache->status,
+    //         //             'projet_id' => $tache->NomProjet,
+    //         //             'users' => [$tache->nom.' '.$tache->prenom],
+    //         //         ];
+    //         //     }
+    //         //     // $currentTache['users'][] = $tache->nom.' '.$tache->prenom;
+
+    //         // }
+
+    //         // if ($currentTache !== null) {
+    //         //     $result[] = $currentTache;
+    //         // }
+
+    //         // return $result;
+    //     }
+    // }
     public function index()
     {
-
         $taches = DB::table('taches')
             ->join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
             ->join('projets', 'projets.id', '=', 'projet_tache_users.projet_id')
-            ->join('users', 'users.id', '=', 'projet_tache_users.user_id')
-
             ->select(
                 'taches.id',
                 'taches.Nom',
@@ -124,71 +189,43 @@ class TacheController extends Controller
                 'taches.DateDebut',
                 'taches.DateFin',
                 'taches.status',
-                'projets.NomProjet',
-                'users.nom',
-                'users.prenom'
+                'projets.NomProjet as projet_id'
             )
-            ->orderBy('taches.id')
-
+            ->distinct()
             ->get();
-
-        $result = [];
-        $currentTache = null;
-        $today = Carbon::today();
-
         foreach ($taches as $tache) {
-            if (
-                $tache->status === 'EnCours' &&
-                (
-                    Carbon::parse($tache->DateFin)->isPast()
-                )
-            ) {
-                DB::table('taches')
-                    ->where('id', $tache->id)
-                    ->update(['status' => 'incomplet']);
+            if ($tache->status === 'EnCours' && Carbon::parse($tache->DateFin)->isPast()) {
+                // DB::table('taches')
+                //     ->where('id', $tache->id)
+                //     ->update(['status' => 'incomplet']);
 
                 $tache->status = 'incomplet';
+                $tache->save();
             }
-            if ($currentTache === null || $currentTache['id'] !== $tache->id) {
-
-                if ($currentTache !== null) {
-                    $result[] = $currentTache;
-                }
-
-                $currentTache = [
-                    'id' => $tache->id,
-                    'Nom' => $tache->Nom,
-                    'Description' => $tache->Description,
-                    'DateDebut' => $tache->DateDebut,
-                    'DateFin' => $tache->DateFin,
-                    'status' => $tache->status,
-                    'projet_id' => $tache->NomProjet,
-                    'users' => [$tache->nom.' '.$tache->prenom],
-                ];
-            }
-            // $currentTache['users'][] = $tache->nom.' '.$tache->prenom;
-
         }
-
-        if ($currentTache !== null) {
-            $result[] = $currentTache;
-        }
-
-        return $result;
+        return $taches;
     }
-
     public function getTacheByUserId($user_id)
     {
-
         $tache = taches::join('projet_tache_users', 'taches.id', '=', 'projet_tache_users.tache_id')
             ->join('projets', 'projet_tache_users.projet_id', '=', 'projets.id')
             ->join('users', 'projet_tache_users.user_id', '=', 'users.id')->select('taches.*', 'projets.NomProjet as projet_id')
             ->where('users.id', '=', $user_id)
             ->get();
+        foreach ($tache as $item) {
+
+            if (
+                $item->status === 'EnCours' &&
+                Carbon::parse($item->DateFin)->isPast()
+            ) {
+
+                $item->status = 'incomplet';
+                $item->save();
+            }
+        }
 
         return $tache;
     }
-
     public function getTacheByProjetId($projet_id)
     {
         $rows = DB::table('taches')
@@ -210,31 +247,32 @@ class TacheController extends Controller
             ->where('projets.id', $projet_id)
             ->get();
 
-        $result = [];
+        // $result = [];
 
-        foreach ($rows as $row) {
+        // foreach ($rows as $row) {
 
-            if (! isset($result[$row->id])) {
-                $result[$row->id] = [
-                    'id' => $row->id,
-                    'Nom' => $row->Nom,
-                    'Description' => $row->Description,
-                    'DateDebut' => $row->DateDebut,
-                    'DateFin' => $row->DateFin,
-                    'status' => $row->status,
-                    'projet' => $row->NomProjet,
-                    'users' => [],
-                ];
-            }
+        //     if (! isset($result[$row->id])) {
+        //         $result[$row->id] = [
+        //             'id' => $row->id,
+        //             'Nom' => $row->Nom,
+        //             'Description' => $row->Description,
+        //             'DateDebut' => $row->DateDebut,
+        //             'DateFin' => $row->DateFin,
+        //             'status' => $row->status,
+        //             'projet' => $row->NomProjet,
+        //             'users' => [],
+        //         ];
+        //     }
+        //     $result[$row->id]['users'][] = [
+        //         'nom' => $row->nom,
+        //         'prenom' => $row->prenom,
+        //         'photo' => $row->photo,
+        //     ];
+        // }
 
-            $result[$row->id]['users'][] = [
-                'nom' => $row->nom,
-                'prenom' => $row->prenom,
-                'photo' => $row->photo,
-            ];
-        }
+        // return array_values($result);
+        return response()->json($rows);
 
-        return array_values($result);
     }
 
     public function getEmployeeNonCongé()
@@ -255,17 +293,14 @@ class TacheController extends Controller
         $employees = DB::table('projet_tache_users')
             ->join('users', 'projet_tache_users.user_id', '=', 'users.id')
             ->join('taches', 'projet_tache_users.tache_id', '=', 'taches.id')
-
             ->select(
                 'users.id',
                 'users.nom',
                 'users.prenom',
-                // 'users.email',
                 'users.photo',
                 'taches.Nom as nom_tache'
             )
-
-            ->where('taches.id', $tache_id)
+            ->where('projet_tache_users.tache_id', $tache_id)
 
             ->get();
 
