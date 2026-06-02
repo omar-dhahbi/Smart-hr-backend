@@ -183,5 +183,5 @@ Route::group(['prefix' => 'avance-salaire'], function () {
 
 Route::group(['prefix' => 'ai'], function () {
 
-    Route::post('chatbot', [IaController::class, 'chatbot'])->middleware(['auth:api', 'role:chefProjet,employee,agentRh']);
+    Route::post('chatbot', [IaController::class, 'chatbot']);
 });

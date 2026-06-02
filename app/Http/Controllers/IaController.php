@@ -66,7 +66,8 @@ class IaController extends Controller
         if ($response->failed()) {
 
             return response()->json([
-                'error' => 'Erreur chatbot python',
+                'status' => $response->status(),
+                'body' => $response->body(),
             ], 500);
         }
 
